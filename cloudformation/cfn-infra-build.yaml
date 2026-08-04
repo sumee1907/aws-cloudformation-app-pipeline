@@ -1,11 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: CloudFormation template to build course end project VPC
-  
-
-Parameters:
-  KeyName:
-    Type: AWS::EC2::KeyPair::KeyName
-    Default: test-key-01
 
 Resources:
 
@@ -173,23 +167,35 @@ Resources:
         - Key: Environment
           Value: Course-End-Project
   
-  WebSG:
+  FrontendSG:
     Type: AWS::EC2::SecurityGroup
     Properties:
       VpcId: !Ref VPC
-      GroupDescription: Web SG
+      GroupDescription: Frontend SG
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 80
           ToPort: 80
           SourceSecurityGroupId: !Ref ALBSG
-        - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          CidrIp: 0.0.0.0/0
       Tags:
         - Key: Name
-          Value: CEP-Web-SG
+          Value: CEP-Frontend-SG
+        - Key: Environment
+          Value: Course-End-Project
+
+  BackendSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Backend security group
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          SourceSecurityGroupId: !Ref FrontendSG
+      Tags:
+        - Key: Name
+          Value: CEP-Backend-SG
         - Key: Environment
           Value: Course-End-Project
 
@@ -197,7 +203,7 @@ Resources:
   ALB:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
-      Name: prod-alb
+      Name: ALB-CEP
       Subnets:
         - !Ref PublicSubnetA
         - !Ref PublicSubnetB
@@ -214,7 +220,7 @@ Resources:
   FrontendTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: prod-tg
+      Name: CEP-Frontend-TG
       VpcId: !Ref VPC
       Port: 80
       Protocol: HTTP
@@ -225,21 +231,9 @@ Resources:
       HealthyThresholdCount: 5
       UnhealthyThresholdCount: 5
       Matcher:
-        HttpCode: 200-403
-    
-  BackendTargetGroup:
-    Type: AWS::ElasticLoadBalancingV2::TargetGroup
-    Properties:
-      Name: !Sub '${AWS::StackName}-backend-tg'
-      VpcId: !Ref VPC
-      Port: 3000
-      Protocol: HTTP
-      TargetType: ip
-      HealthCheckPath: /health
-      Matcher:
         HttpCode: 200
 
-  Listener:
+  HTTPListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       LoadBalancerArn: !Ref ALB
