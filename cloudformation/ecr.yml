@@ -1,0 +1,98 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Amazon ECR repositories for the course end project
+
+Resources:
+
+  FrontendRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: cep-frontend
+      ImageTagMutability: MUTABLE
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      EncryptionConfiguration:
+        EncryptionType: AES256
+      EmptyOnDelete: true
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Keep only the 3 most recent images",
+                "selection": {
+                  "tagStatus": "any",
+                  "countType": "imageCountMoreThan",
+                  "countNumber": 3
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: Name
+          Value: CEP-Frontend-ECR
+        - Key: Environment
+          Value: Course-End-Project
+
+  BackendRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: cep-backend
+      ImageTagMutability: MUTABLE
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      EncryptionConfiguration:
+        EncryptionType: AES256
+      EmptyOnDelete: true
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Keep only the 3 most recent images",
+                "selection": {
+                  "tagStatus": "any",
+                  "countType": "imageCountMoreThan",
+                  "countNumber": 3
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: Name
+          Value: CEP-Backend-ECR
+        - Key: Environment
+          Value: Course-End-Project
+
+Outputs:
+
+  FrontendRepositoryName:
+    Description: Frontend ECR repository name
+    Value: !Ref FrontendRepository
+
+  FrontendRepositoryUri:
+    Description: Frontend ECR repository URI
+    Value: !GetAtt FrontendRepository.RepositoryUri
+
+  FrontendRepositoryArn:
+    Description: Frontend ECR repository ARN
+    Value: !GetAtt FrontendRepository.Arn
+
+  BackendRepositoryName:
+    Description: Backend ECR repository name
+    Value: !Ref BackendRepository
+
+  BackendRepositoryUri:
+    Description: Backend ECR repository URI
+    Value: !GetAtt BackendRepository.RepositoryUri
+
+  BackendRepositoryArn:
+    Description: Backend ECR repository ARN
+    Value: !GetAtt BackendRepository.Arn
