@@ -1,0 +1,48 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Root CloudFormation stack for the course end project
+
+Resources:
+
+  NetworkStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: ./network.yaml
+      TimeoutInMinutes: 20
+      Tags:
+        - Key: Name
+          Value: CEP-Network-Nested-Stack
+        - Key: Environment
+          Value: Course-End-Project
+
+  ECRStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: ./ecr.yaml
+      TimeoutInMinutes: 10
+      Tags:
+        - Key: Name
+          Value: CEP-ECR-Nested-Stack
+        - Key: Environment
+          Value: Course-End-Project
+
+Outputs:
+
+  NetworkStackId:
+    Description: Nested network stack ID
+    Value: !Ref NetworkStack
+
+  ECRStackId:
+    Description: Nested ECR stack ID
+    Value: !Ref ECRStack
+
+  ALBDNSName:
+    Description: Public DNS name returned by the network stack
+    Value: !GetAtt NetworkStack.Outputs.ALBDNSName
+
+  FrontendRepositoryUri:
+    Description: Frontend ECR repository URI
+    Value: !GetAtt ECRStack.Outputs.FrontendRepositoryUri
+
+  BackendRepositoryUri:
+    Description: Backend ECR repository URI
+    Value: !GetAtt ECRStack.Outputs.BackendRepositoryUri
