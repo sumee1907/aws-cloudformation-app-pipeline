@@ -12,7 +12,7 @@ Resources:
         ScanOnPush: true
       EncryptionConfiguration:
         EncryptionType: AES256
-      EmptyOnDelete: true
+      EmptyOnDelete: true        #Being this is a lab environment, we can safely delete the repository when the stack is deleted. In production, you would want to set this to false to avoid accidental deletion of your images.
       LifecyclePolicy:
         LifecyclePolicyText: |
           {
@@ -46,7 +46,7 @@ Resources:
         ScanOnPush: true
       EncryptionConfiguration:
         EncryptionType: AES256
-      EmptyOnDelete: true
+      EmptyOnDelete: true   #Being this is a lab environment, we can safely delete the repository when the stack is deleted. In production, you would want to set this to false to avoid accidental deletion of your images.
       LifecyclePolicy:
         LifecyclePolicyText: |
           {

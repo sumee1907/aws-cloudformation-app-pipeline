@@ -9,3 +9,5 @@ application/frontend/dist/
 *.log
 .env
 .env.*
+
+cloudformation/main-packaged.yaml
