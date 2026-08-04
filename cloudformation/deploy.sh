@@ -4,7 +4,7 @@ echo "Deploying network stack..."
 echo
 
 aws cloudformation deploy \
-  --template-file cloudformation/network.yaml \
+  --template-file network.yaml \
   --stack-name CEP-Network
 
 echo
@@ -12,6 +12,6 @@ echo "Deploying ECR stack..."
 echo
 
 aws cloudformation deploy \
-  --template-file cloudformation/ecr.yaml \
+  --template-file ecr.yaml \
   --stack-name CEP-ECR
 
