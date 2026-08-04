@@ -1,0 +1,91 @@
+#root {
+  min-height: 100vh;
+}
+
+.page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #eef2f7;
+}
+
+.card {
+  width: min(100%, 700px);
+  padding: 48px;
+  border-radius: 16px;
+  background: white;
+  box-shadow: 0 16px 48px rgb(23 32 51 / 12%);
+  text-align: center;
+}
+
+.program-name {
+  margin: 0;
+  color: #52647d;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.08rem;
+  text-transform: uppercase;
+}
+
+.project-name {
+  margin: 12px 0 0;
+  color: #2156a5;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+h1 {
+  margin: 32px 0 16px;
+  color: #172033;
+  font-size: clamp(3rem, 8vw, 5rem);
+}
+
+.current-time {
+  margin: 24px 0;
+  color: #29364d;
+  font-size: clamp(1.2rem, 4vw, 1.8rem);
+  font-weight: 600;
+}
+
+.connection-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  color: #126b39;
+  font-weight: 700;
+}
+
+.status-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #19a55a;
+}
+
+.error-panel {
+  margin-top: 24px;
+  color: #a61b1b;
+}
+
+button {
+  margin-top: 8px;
+  border: 0;
+  border-radius: 8px;
+  padding: 12px 18px;
+  color: white;
+  background: #2156a5;
+  cursor: pointer;
+  font: inherit;
+}
+
+button:hover {
+  background: #173f7d;
+}
+
+@media (max-width: 600px) {
+  .card {
+    padding: 32px 20px;
+  }
+}
