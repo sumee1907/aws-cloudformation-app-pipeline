@@ -1,17 +1,11 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: CloudFormation template to build course end project
+Description: CloudFormation template to build course end project VPC
   
 
 Parameters:
   KeyName:
     Type: AWS::EC2::KeyPair::KeyName
     Default: test-key-01
-  DBUsername:
-    Type: String
-    Default: administrator
-  DBPassword:
-    Type: String
-    NoEcho: true
 
 Resources:
 
@@ -115,7 +109,7 @@ Resources:
       RouteTableId: !Ref PrivateRouteTable
 
   # ---------------- Subnets ----------------
-  # Public subnets for Prod
+  # Public subnets
   PublicSubnetA:
     Type: AWS::EC2::Subnet
     Properties:
@@ -123,7 +117,7 @@ Resources:
       CidrBlock: 10.0.0.0/24
       AvailabilityZone: !Select [0, !GetAZs '']
       MapPublicIpOnLaunch: true
-
+  
   PublicSubnetB:
     Type: AWS::EC2::Subnet
     Properties:
@@ -132,7 +126,7 @@ Resources:
       AvailabilityZone: !Select [1, !GetAZs '']
       MapPublicIpOnLaunch: true
 
-  # Private subnets for Lab
+  # Private subnets
   PrivateSubnetA:
     Type: AWS::EC2::Subnet
     Properties:
@@ -140,7 +134,7 @@ Resources:
       CidrBlock: 10.0.2.0/24
       AvailabilityZone: !Select [0, !GetAZs '']
       MapPublicIpOnLaunch: false
-
+  
   PrivateSubnetB:
     Type: AWS::EC2::Subnet
     Properties:
@@ -183,7 +177,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       VpcId: !Ref VPC
-      GroupDescription: Prod and Lab Web SG
+      GroupDescription: Web SG
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 80
@@ -199,141 +193,8 @@ Resources:
         - Key: Environment
           Value: Course-End-Project
 
-  DBSGProd:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      VpcId: !Ref VPC
-      GroupDescription: Prod DB SG
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 3306
-          ToPort: 3306
-          SourceSecurityGroupId: !Ref WebSG
-      Tags:
-        - Key: Name
-          Value: CEP-DB-SG-Prod
-        - Key: Environment
-          Value: Course-End-Project
-
-  DBSGLab:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      VpcId: !Ref VPC
-      GroupDescription: Lab DB SG
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 3306
-          ToPort: 3306
-          SourceSecurityGroupId: !Ref WebSG
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 3306
-          ToPort: 3306
-          SourceSecurityGroupId: !Ref WebSG
-      Tags:
-        - Key: Name
-          Value: CEP-DB-SG-Lab
-        - Key: Environment
-          Value: Course-End-Project
-
-  # ---------------- IAM Role for EC2 ----------------
-  EC2Role:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: ec2.amazonaws.com
-            Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
-      Tags:
-        - Key: Name
-          Value: CEP-EC2-Role
-        - Key: Environment
-          Value: Course-End-Project
-
-  InstanceProfile:
-    Type: AWS::IAM::InstanceProfile
-    Properties:
-      Roles:
-        - !Ref EC2Role
-      Tags:
-        - Key: Name
-          Value: CEP-EC2-InstanceProfile
-        - Key: Environment
-          Value: Course-End-Project
-
-  # ---------------- RDS Instances ----------------
-  DBSubnetGroupProd:
-    Type: AWS::RDS::DBSubnetGroup
-    Properties:
-      DBSubnetGroupDescription: Prod Multi-AZ
-      SubnetIds:
-        - !Ref PrivateSubnetA
-        - !Ref PrivateSubnetB
-      Tags:
-        - Key: Name
-          Value: CEP-DB-SubnetGroup-Prod
-        - Key: Environment
-          Value: Course-End-Project
-
-  DBProd:
-    Type: AWS::RDS::DBInstance
-    Properties:
-      DBName: prod_wordpress
-      Engine: mysql
-      EngineVersion: '8.0'
-      DBInstanceClass: db.t3.small
-      AllocatedStorage: 100
-      MasterUsername: !Ref DBUsername
-      MasterUserPassword: !Ref DBPassword
-      MultiAZ: true
-      DBSubnetGroupName: !Ref DBSubnetGroupProd
-      VPCSecurityGroups:
-        - !Ref DBSGProd
-      DeletionProtection: false
-      BackupRetentionPeriod: 1
-
-  DBSubnetGroupLab:
-    Type: AWS::RDS::DBSubnetGroup
-    Properties:
-      DBSubnetGroupDescription: Lab Multi-AZ
-      SubnetIds:
-        - !Ref PrivateSubnetA
-        - !Ref PrivateSubnetB
-      Tags:
-        - Key: Name
-          Value: CEP-DB-SubnetGroup-Lab
-        - Key: Environment
-          Value: Course-End-Project
-
-  DBLab:
-    Type: AWS::RDS::DBInstance
-    Properties:
-      DBName: lab_wordpress
-      Engine: mysql
-      EngineVersion: '8.0'
-      DBInstanceClass: db.t3.micro
-      AllocatedStorage: 20
-      MasterUsername: !Ref DBUsername
-      MasterUserPassword: !Ref DBPassword
-      MultiAZ: true
-      DBSubnetGroupName: !Ref DBSubnetGroupLab
-      VPCSecurityGroups:
-        - !Ref DBSGLab
-      DeletionProtection: false
-      BackupRetentionPeriod: 1
-      Tags:
-        - Key: Name
-          Value: CEP-DB-Lab
-        - Key: Environment
-          Value: Course-End-Project
-
   # ---------------- ALBs ----------------
-  ALBProd:
+  ALB:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
       Name: prod-alb
@@ -346,18 +207,18 @@ Resources:
       Type: application
       Tags:
         - Key: Name
-          Value: CEP-ALB-Prod
+          Value: CEP-ALB
         - Key: Environment
           Value: Course-End-Project
 
-  TargetGroupProd:
+  FrontendTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       Name: prod-tg
       VpcId: !Ref VPC
       Port: 80
       Protocol: HTTP
-      TargetType: instance
+      TargetType: ip
       HealthCheckPath: /
       HealthCheckIntervalSeconds: 30
       HealthCheckTimeoutSeconds: 10
@@ -365,266 +226,25 @@ Resources:
       UnhealthyThresholdCount: 5
       Matcher:
         HttpCode: 200-403
-
-  ListenerProd:
-    Type: AWS::ElasticLoadBalancingV2::Listener
-    Properties:
-      LoadBalancerArn: !Ref ALBProd
-      Port: 80
-      Protocol: HTTP
-      DefaultActions:
-        - Type: forward
-          TargetGroupArn: !Ref TargetGroupProd
-
-  ALBLab:
-    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
-    Properties:
-      Name: lab-alb
-      Subnets:
-        - !Ref PrivateSubnetA
-        - !Ref PrivateSubnetB
-      SecurityGroups:
-        - !Ref ALBSG
-      Scheme: internal
-      Type: application
-      Tags:
-        - Key: Name
-          Value: CEP-ALB-Lab
-        - Key: Environment
-          Value: Course-End-Project
-
-  TargetGroupLab:
+    
+  BackendTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: lab-tg
+      Name: !Sub '${AWS::StackName}-backend-tg'
       VpcId: !Ref VPC
-      Port: 80
+      Port: 3000
       Protocol: HTTP
-      TargetType: instance
-      HealthCheckPath: /
-      HealthCheckIntervalSeconds: 30
-      HealthCheckTimeoutSeconds: 10
-      HealthyThresholdCount: 5
-      UnhealthyThresholdCount: 5
+      TargetType: ip
+      HealthCheckPath: /health
       Matcher:
-        HttpCode: 200-403
-      Tags:
-        - Key: Name
-          Value: CEP-TG-Lab
-        - Key: Environment
-          Value: Course-End-Project
+        HttpCode: 200
 
-  ListenerLab:
+  Listener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
-      LoadBalancerArn: !Ref ALBLab
+      LoadBalancerArn: !Ref ALB
       Port: 80
       Protocol: HTTP
       DefaultActions:
         - Type: forward
-          TargetGroupArn: !Ref TargetGroupLab
-      Tags:
-        - Key: Name
-          Value: CEP-Listener-Lab
-        - Key: Environment
-          Value: Course-End-Project
-
-  # ---------------- Launch Templates ----------------
-  LaunchTemplateProd:
-    Type: AWS::EC2::LaunchTemplate
-    Properties:
-      LaunchTemplateName: prod-lt
-      LaunchTemplateData:
-        InstanceType: t3.small
-        KeyName: !Ref KeyName
-        SecurityGroupIds:
-          - !Ref WebSG
-        IamInstanceProfile:
-          Name: !Ref InstanceProfile
-        ImageId: ami-0c02fb55956c7d316
-        UserData:
-          Fn::Base64: !Sub |
-            #!/bin/bash
-            yum update -y
-            amazon-linux-extras enable php8.2
-            yum clean metadata
-            yum install -y httpd php php-mysqlnd wget mysql amazon-cloudwatch-agent
-            systemctl enable httpd
-            systemctl start httpd
-            sleep 30
-            SECONDS=0
-            TIMEOUT=600  # 10 minutes
-            until mysqladmin ping -h ${DBProd.Endpoint.Address} --silent; do
-              if [ $SECONDS -ge $TIMEOUT ]; then
-                echo "RDS not responding in 10 minutes, exiting"
-                exit 1
-              fi
-              sleep 10
-            done
-            cd /var/www/html
-            wget https://wordpress.org/latest.tar.gz
-            tar -xzf latest.tar.gz --strip-components=1
-            cat > wp-config.php <<EOF
-            <?php
-            define('DB_NAME', 'prod_wordpress');
-            define('DB_USER', '${DBUsername}');
-            define('DB_PASSWORD', '${DBPassword}');
-            define('DB_HOST', '${DBProd.Endpoint.Address}');
-            define('DB_CHARSET', 'utf8');
-            define('DB_COLLATE', '');
-
-            \$table_prefix = 'wp_';
-
-            if ( !defined('ABSPATH') )
-                define('ABSPATH', __DIR__ . '/');
-
-            require_once ABSPATH . 'wp-settings.php';
-            EOF
-            chmod -R 755 /var/www/html
-            chown -R apache:apache /var/www/html
-            sed -i 's/AllowOverride None/AllowOverride All/' /etc/httpd/conf/httpd.conf
-            rm -f /var/www/html/index.html
-            systemctl restart httpd
-      Tags:
-        - Key: Name
-          Value: CEP-LaunchTemplate-Prod
-        - Key: Environment
-          Value: Course-End-Project
-
-  LaunchTemplateLab:
-    Type: AWS::EC2::LaunchTemplate
-    Properties:
-      LaunchTemplateName: lab-lt
-      LaunchTemplateData:
-        InstanceType: t3.micro
-        KeyName: !Ref KeyName
-        SecurityGroupIds:
-          - !Ref WebSG
-        IamInstanceProfile:
-          Name: !Ref InstanceProfile
-        ImageId: ami-0c02fb55956c7d316
-        UserData:
-          Fn::Base64: !Sub |
-            #!/bin/bash
-            yum update -y
-            amazon-linux-extras enable php8.2
-            yum clean metadata
-            yum install -y httpd php php-mysqlnd wget mysql amazon-cloudwatch-agent
-            systemctl enable httpd
-            systemctl start httpd
-            sleep 30
-            SECONDS=0
-            TIMEOUT=600  # 10 minutes
-            until mysqladmin ping -h ${DBLab.Endpoint.Address} --silent; do
-              if [ $SECONDS -ge $TIMEOUT ]; then
-                echo "RDS not responding in 10 minutes, exiting"
-                exit 1
-                fi
-            sleep 10
-            done
-            cd /var/www/html
-            wget https://wordpress.org/latest.tar.gz
-            tar -xzf latest.tar.gz --strip-components=1
-            cat > wp-config.php <<EOF
-            <?php
-            define('DB_NAME', 'lab_wordpress');
-            define('DB_USER', '${DBUsername}');
-            define('DB_PASSWORD', '${DBPassword}');
-            define('DB_HOST', '${DBLab.Endpoint.Address}');
-            define('DB_CHARSET', 'utf8');
-            define('DB_COLLATE', '');
-
-            \$table_prefix = 'wp_';
-
-            if ( !defined('ABSPATH') )
-                define('ABSPATH', __DIR__ . '/');
-
-            require_once ABSPATH . 'wp-settings.php';
-            EOF
-            chmod -R 755 /var/www/html
-            chown -R apache:apache /var/www/html
-            sed -i 's/AllowOverride None/AllowOverride All/' /etc/httpd/conf/httpd.conf
-            rm -f /var/www/html/index.html
-            systemctl restart httpd
-      Tags:
-        - Key: Name
-          Value: CEP-LaunchTemplate-Lab
-        - Key: Environment
-          Value: Course-End-Project
-
-  # ---------------- Auto Scaling Groups ----------------
-  ASGProd:
-    Type: AWS::AutoScaling::AutoScalingGroup
-    Properties:
-      LaunchTemplate:
-        LaunchTemplateId: !Ref LaunchTemplateProd
-        Version: !GetAtt LaunchTemplateProd.LatestVersionNumber
-      MinSize: 1
-      MaxSize: 3
-      DesiredCapacity: 2
-      VPCZoneIdentifier:
-        - !Ref PublicSubnetA
-        - !Ref PublicSubnetB
-      TargetGroupARNs:
-        - !Ref TargetGroupProd
-      HealthCheckType: ELB
-      HealthCheckGracePeriod: 600
-      Tags:
-        - Key: Name
-          Value: CEP-ASG-Prod
-          PropagateAtLaunch: true
-        - Key: Environment
-          Value: Course-End-Project
-          PropagateAtLaunch: true
-
-  ASGLab:
-    Type: AWS::AutoScaling::AutoScalingGroup
-    Properties:
-      LaunchTemplate:
-        LaunchTemplateId: !Ref LaunchTemplateLab
-        Version: !GetAtt LaunchTemplateLab.LatestVersionNumber
-      MinSize: 1
-      MaxSize: 2
-      DesiredCapacity: 1
-      VPCZoneIdentifier:
-        - !Ref PrivateSubnetA
-        - !Ref PrivateSubnetB
-      TargetGroupARNs:
-        - !Ref TargetGroupLab
-      HealthCheckType: ELB
-      HealthCheckGracePeriod: 600
-      Tags:
-        - Key: Name
-          Value: CEP-ASG-Lab
-          PropagateAtLaunch: true
-        - Key: Environment
-          Value: Course-End-Project
-          PropagateAtLaunch: true
-          
-  # ---------------- Scheduled Scaling for Lab ----------------
-  LabScaleDown:
-    Type: AWS::AutoScaling::ScheduledAction
-    Properties:
-      AutoScalingGroupName: !Ref ASGLab
-      DesiredCapacity: 0
-      MinSize: 0
-      MaxSize: 0
-      Recurrence: "0 22 * * *"
-
-  LabScaleUp:
-    Type: AWS::AutoScaling::ScheduledAction
-    Properties:
-      AutoScalingGroupName: !Ref ASGLab
-      DesiredCapacity: 1
-      MinSize: 1
-      MaxSize: 2
-      Recurrence: "0 13 * * *"
-
-Outputs:
-  ProdURL:
-    Description: URL of the Prod WordPress site
-    Value: !GetAtt ALBProd.DNSName
-
-  LabURL:
-    Description: Internal URL of the Lab WordPress site
-    Value: !GetAtt ALBLab.DNSName
+          TargetGroupArn: !Ref FrontendTargetGroup
