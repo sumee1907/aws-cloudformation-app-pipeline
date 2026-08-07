@@ -1,0 +1,50 @@
+version: 0.2
+
+phases:
+
+  pre_build:
+    commands:
+      - echo "Logging in to Amazon ECR..."
+      - IMAGE_VERSION="v-${CODEBUILD_BUILD_NUMBER}"
+      - AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+      - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+
+      - echo "Image tag: $IMAGE_TAG"
+
+  build:
+    commands:
+      - echo "Building backend Docker image..."
+
+      - docker build -t $BACKEND_REPOSITORY_URI:latest -t $BACKEND_REPOSITORY_URI:$IMAGE_TAG -t $BACKEND_REPOSITORY_URI:$IMAGE_VERSION application/backend
+
+      - echo "Building frontend Docker image..."
+
+      - docker build -t $FRONTEND_REPOSITORY_URI:latest -t $FRONTEND_REPOSITORY_URI:$IMAGE_TAG -t $FRONTEND_REPOSITORY_URI:$IMAGE_VERSION application/frontend
+      
+  post_build:
+    commands:
+      - echo "Pushing backend Docker image to Amazon ECR..."
+
+      - docker push $BACKEND_REPOSITORY_URI:latest
+      - docker push $BACKEND_REPOSITORY_URI:$IMAGE_TAG
+      - docker push $BACKEND_REPOSITORY_URI:$IMAGE_VERSION
+
+      - echo "Pushing frontend Docker image to Amazon ECR..."
+
+      - docker push $FRONTEND_REPOSITORY_URI:latest
+      - docker push $FRONTEND_REPOSITORY_URI:$IMAGE_TAG
+      - docker push $FRONTEND_REPOSITORY_URI:$IMAGE_VERSION
+
+      - echo "Creating ECS image definitions file..."
+
+      - printf '[{"name":"backend","imageUri":"%s"}]' "$BACKEND_REPOSITORY_URI:latest" > imagedefinitions-backend.json
+
+      - printf '[{"name":"frontend","imageUri":"%s"}]' "$FRONTEND_REPOSITORY_URI:latest" > imagedefinitions-frontend.json
+
+      - echo "Build complete."
+
+artifacts:
+  files:
+    - imagedefinitions-backend.json
+    - imagedefinitions-frontend.json
