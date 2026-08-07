@@ -1,0 +1,212 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Amazon ECS resources for the course end project
+
+Parameters:
+
+  PrivateSubnetAId:
+    Type: AWS::EC2::Subnet::Id
+
+  PrivateSubnetBId:
+    Type: AWS::EC2::Subnet::Id
+
+  FrontendSecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+
+  BackendSecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+
+  FrontendTargetGroupArn:
+    Type: String
+
+  FrontendRepositoryUri:
+    Type: String
+
+  BackendRepositoryUri:
+    Type: String
+
+  ECSTaskExecutionRoleArn:
+    Type: String
+
+Resources:
+
+  # ---------------- ECS Cluster ----------------
+
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: CEP-ECS-Cluster
+      ServiceConnectDefaults:
+        Namespace: cep.local
+      Tags:
+        - Key: Name
+          Value: CEP-ECS-Cluster
+        - Key: Environment
+          Value: Course-End-Project
+
+  # ---------------- CloudWatch Logs ----------------
+
+  FrontendLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/cep-frontend
+      RetentionInDays: 3
+
+  BackendLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/cep-backend
+      RetentionInDays: 3
+
+  # ---------------- Backend Task Definition ----------------
+
+  BackendTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: cep-backend
+      Cpu: '256'
+      Memory: '512'
+      NetworkMode: awsvpc
+
+      RequiresCompatibilities:
+        - FARGATE
+
+      ExecutionRoleArn: !Ref ECSTaskExecutionRoleArn
+
+      ContainerDefinitions:
+        - Name: backend
+          Image: !Sub '${BackendRepositoryUri}:latest'
+          Essential: true
+
+          PortMappings:
+            - Name: backend
+              ContainerPort: 3000
+              Protocol: tcp
+              AppProtocol: http
+
+          Environment:
+            - Name: NODE_ENV
+              Value: production
+
+            - Name: PORT
+              Value: '3000'
+
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref BackendLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: backend
+
+  # ---------------- Backend Service ----------------
+
+  BackendService:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: CEP-Backend-Service
+      Cluster: !Ref ECSCluster
+      TaskDefinition: !Ref BackendTaskDefinition
+
+      DesiredCount: 0
+
+      LaunchType: FARGATE
+      PlatformVersion: LATEST
+
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          Subnets:
+            - !Ref PrivateSubnetAId
+            - !Ref PrivateSubnetBId
+          SecurityGroups:
+            - !Ref BackendSecurityGroupId
+
+      ServiceConnectConfiguration:
+        Enabled: true
+        Namespace: cep.local
+        Services:
+          - PortName: backend
+            DiscoveryName: backend
+            ClientAliases:
+              - DnsName: backend
+                Port: 3000
+
+  # ---------------- Frontend Task Definition ----------------
+
+  FrontendTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: cep-frontend
+      Cpu: '256'
+      Memory: '512'
+      NetworkMode: awsvpc
+
+      RequiresCompatibilities:
+        - FARGATE
+
+      ExecutionRoleArn: !Ref ECSTaskExecutionRoleArn
+
+      ContainerDefinitions:
+        - Name: frontend
+          Image: !Sub '${FrontendRepositoryUri}:latest'
+          Essential: true
+
+          PortMappings:
+            - Name: frontend
+              ContainerPort: 80
+              Protocol: tcp
+              AppProtocol: http
+
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref FrontendLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: frontend
+
+  # ---------------- Frontend Service ----------------
+
+  FrontendService:
+    Type: AWS::ECS::Service
+    DependsOn:
+      - BackendService
+
+    Properties:
+      ServiceName: CEP-Frontend-Service
+      Cluster: !Ref ECSCluster
+      TaskDefinition: !Ref FrontendTaskDefinition
+
+      DesiredCount: 0
+
+      LaunchType: FARGATE
+      PlatformVersion: LATEST
+
+      HealthCheckGracePeriodSeconds: 60
+
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          Subnets:
+            - !Ref PrivateSubnetAId
+            - !Ref PrivateSubnetBId
+          SecurityGroups:
+            - !Ref FrontendSecurityGroupId
+
+      LoadBalancers:
+        - ContainerName: frontend
+          ContainerPort: 80
+          TargetGroupArn: !Ref FrontendTargetGroupArn
+
+      ServiceConnectConfiguration:
+        Enabled: true
+        Namespace: cep.local
+
+Outputs:
+
+  ECSClusterName:
+    Value: !Ref ECSCluster
+
+  FrontendServiceName:
+    Value: !GetAtt FrontendService.Name
+
+  BackendServiceName:
+    Value: !GetAtt BackendService.Name

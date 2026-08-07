@@ -41,7 +41,7 @@ aws s3api put-public-access-block \
 echo "Validating templates..."
 
 # Validate each CloudFormation stack template
-for template in network.yaml ecr.yaml main.yaml iam.yaml; do
+for template in network.yaml ecr.yaml main.yaml iam.yaml ecs.yaml; do
     aws cloudformation validate-template \
         --template-body "file://${CFN_DIR}/${template}" \
         --region "${AWS_REGION}" \
@@ -52,7 +52,7 @@ done
 
 echo "Packaging templates..."
 
-# Package the main CloudFormation template and uploading it as an artifact to the S3 bucket
+# Packaging the main CloudFormation template and uploading it as an artifact to the S3 bucket
 aws cloudformation package \
     --template-file "${MAIN_TEMPLATE}" \
     --s3-bucket "${S3_BUCKET}" \

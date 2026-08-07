@@ -25,6 +25,47 @@ Resources:
         - Key: Environment
           Value: Course-End-Project
 
+  IAMStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - ECRStack
+    Properties:
+      TemplateURL: ./iam.yaml
+      TimeoutInMinutes: 10
+      Parameters:
+        ProjectBucketName: !Ref ProjectBucketName
+        FrontendRepositoryArn: !GetAtt ECRStack.Outputs.FrontendRepositoryArn
+        BackendRepositoryArn: !GetAtt ECRStack.Outputs.BackendRepositoryArn
+      Tags:
+        - Key: Name
+          Value: CEP-IAM-Nested-Stack
+        - Key: Environment
+          Value: Course-End-Project
+
+  ECSStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - NetworkStack
+      - ECRStack
+      - IAMStack
+    Properties:
+      TemplateURL: ./ecs.yaml
+      Parameters:
+        PrivateSubnetAId: !GetAtt NetworkStack.Outputs.PrivateSubnetAId
+        PrivateSubnetBId: !GetAtt NetworkStack.Outputs.PrivateSubnetBId
+
+        FrontendSecurityGroupId: !GetAtt NetworkStack.Outputs.FrontendSecurityGroupId
+        BackendSecurityGroupId: !GetAtt NetworkStack.Outputs.BackendSecurityGroupId
+
+        FrontendTargetGroupArn: !GetAtt NetworkStack.Outputs.FrontendTargetGroupArn
+
+        FrontendRepositoryUri: !GetAtt ECRStack.Outputs.FrontendRepositoryUri
+        BackendRepositoryUri: !GetAtt ECRStack.Outputs.BackendRepositoryUri
+
+        ECSTaskExecutionRoleArn: !GetAtt IAMStack.Outputs.ECSTaskExecutionRoleArn
+
+
+
 Outputs:
 
   NetworkStackId:
