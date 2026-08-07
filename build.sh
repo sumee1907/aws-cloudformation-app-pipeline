@@ -50,6 +50,12 @@ for template in network.yaml ecr.yaml main.yaml iam.yaml ecs.yaml; do
     echo "${template} is valid."
 done
 
+echo "Removing old packaged templates..."
+
+aws s3 rm \
+    "s3://${S3_BUCKET}/cloudformation/templates/" \
+    --recursive
+
 echo "Packaging templates..."
 
 # Packaging the main CloudFormation template and uploading it as an artifact to the S3 bucket
