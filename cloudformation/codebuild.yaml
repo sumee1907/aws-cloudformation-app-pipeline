@@ -1,0 +1,48 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: CloudFormation template for AWS CodeBuild project for the course end project
+
+Parameters:
+  CodeBuildRoleArn:
+    Type: String
+  FrontendRepositoryUri:
+    Type: String
+  BackendRepositoryUri:
+    Type: String
+
+Resources:
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: CEP-CodeBuild-Project
+      Description: CodeBuild project for the course end project
+      ServiceRole: !Ref CodeBuildRoleArn
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: pipeline/buildspec.yml
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:7.0
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: AWS_REGION
+            Value: !Ref "AWS::Region"
+          - Name: FRONTEND_REPOSITORY_URI
+            Value: !Ref FrontendRepositoryUri
+          - Name: BACKEND_REPOSITORY_URI
+            Value: !Ref BackendRepositoryUri
+      Tags:
+        - Key: Name
+          Value: CEP-CodeBuild-Project
+        - Key: Environment
+          Value: Course-End-Project
+
+Outputs:
+  CodeBuildProjectName:
+    Description: Name of the CodeBuild project
+    Value: !Ref CodeBuildProject
+  CodeBuildProjectArn:
+    Description: ARN of the CodeBuild project
+    Value: !GetAtt CodeBuildProject.Arn

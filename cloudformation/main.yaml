@@ -60,18 +60,24 @@ Resources:
       Parameters:
         PrivateSubnetAId: !GetAtt NetworkStack.Outputs.PrivateSubnetAId
         PrivateSubnetBId: !GetAtt NetworkStack.Outputs.PrivateSubnetBId
-
         FrontendSecurityGroupId: !GetAtt NetworkStack.Outputs.FrontendSecurityGroupId
         BackendSecurityGroupId: !GetAtt NetworkStack.Outputs.BackendSecurityGroupId
-
         FrontendTargetGroupArn: !GetAtt NetworkStack.Outputs.FrontendTargetGroupArn
-
         FrontendRepositoryUri: !GetAtt ECRStack.Outputs.FrontendRepositoryUri
         BackendRepositoryUri: !GetAtt ECRStack.Outputs.BackendRepositoryUri
-
         ECSTaskExecutionRoleArn: !GetAtt IAMStack.Outputs.ECSTaskExecutionRoleArn
 
-
+  CodeBuildStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - ECRStack
+      - IAMStack
+    Properties:
+      TemplateURL: ./codebuild.yaml
+      Parameters:
+        CodeBuildRoleArn: !GetAtt IAMStack.Outputs.CodeBuildRoleArn
+        FrontendRepositoryUri: !GetAtt ECRStack.Outputs.FrontendRepositoryUri
+        BackendRepositoryUri: !GetAtt ECRStack.Outputs.BackendRepositoryUri
 
 Outputs:
 

@@ -41,7 +41,7 @@ aws s3api put-public-access-block \
 echo "Validating templates..."
 
 # Validate each CloudFormation stack template
-for template in network.yaml ecr.yaml main.yaml iam.yaml ecs.yaml; do
+for template in network.yaml ecr.yaml main.yaml iam.yaml ecs.yaml codebuild.yaml; do
     aws cloudformation validate-template \
         --template-body "file://${CFN_DIR}/${template}" \
         --region "${AWS_REGION}" \
