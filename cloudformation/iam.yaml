@@ -1,0 +1,194 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: IAM roles and policies for the course end project
+
+Parameters:
+
+  ProjectBucketName:
+    Type: String
+    Description: Shared S3 bucket used for pipeline artifacts and templates
+
+  FrontendRepositoryArn:
+    Type: String
+    Description: Frontend ECR repository ARN
+
+  BackendRepositoryArn:
+    Type: String
+    Description: Backend ECR repository ARN
+
+Resources:
+
+  # ---------------- ECS Task Execution Role ----------------
+
+  ECSTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: CEP-ECS-Task-Execution-Role
+
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action:
+              - sts:AssumeRole
+
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
+      Tags:
+        - Key: Name
+          Value: CEP-ECS-Task-Execution-Role
+        - Key: Environment
+          Value: Course-End-Project
+
+  # ---------------- CodeBuild Role ----------------
+
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: {"Fn::Join": ["", [{"Ref": "AWS::Region"}, "-CEP-CodeBuild-Role"]]}
+
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codebuild.amazonaws.com
+            Action:
+              - sts:AssumeRole
+
+      Policies:
+        - PolicyName: CEP-CodeBuild-Policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+
+              - Sid: CloudWatchLogs
+                Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: '*'
+
+              - Sid: ECRLogin
+                Effect: Allow
+                Action:
+                  - ecr:GetAuthorizationToken
+                Resource: '*'
+
+              - Sid: ECRImageAccess
+                Effect: Allow
+                Action:
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:CompleteLayerUpload
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:InitiateLayerUpload
+                  - ecr:PutImage
+                  - ecr:UploadLayerPart
+                Resource:
+                  - !Ref FrontendRepositoryArn
+                  - !Ref BackendRepositoryArn
+
+              - Sid: PipelineArtifactBucket
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:PutObject
+                  - s3:GetBucketLocation
+                Resource:
+                  - !Sub 'arn:${AWS::Partition}:s3:::${ProjectBucketName}'
+                  - !Sub 'arn:${AWS::Partition}:s3:::${ProjectBucketName}/*'
+
+      Tags:
+        - Key: Name
+          Value: CEP-CodeBuild-Role
+        - Key: Environment
+          Value: Course-End-Project
+
+  # ---------------- CodePipeline Role ----------------
+
+  CodePipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: {"Fn::Join": ["", [{"Ref": "AWS::Region"}, "-CEP-CodePipeline-Role"]]}
+
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codepipeline.amazonaws.com
+            Action:
+              - sts:AssumeRole
+
+      Policies:
+        - PolicyName: CEP-CodePipeline-Policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+
+              - Sid: PipelineArtifactBucket
+                Effect: Allow
+                Action:
+                  - s3:GetBucketVersioning
+                  - s3:GetBucketLocation
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:PutObject
+                Resource:
+                  - !Sub 'arn:${AWS::Partition}:s3:::${ProjectBucketName}'
+                  - !Sub 'arn:${AWS::Partition}:s3:::${ProjectBucketName}/*'
+
+              - Sid: RunCodeBuild
+                Effect: Allow
+                Action:
+                  - codebuild:StartBuild
+                  - codebuild:BatchGetBuilds
+                Resource: '*'
+
+              - Sid: DeployToECS
+                Effect: Allow
+                Action:
+                  - ecs:DescribeServices
+                  - ecs:DescribeTaskDefinition
+                  - ecs:DescribeTasks
+                  - ecs:ListTasks
+                  - ecs:RegisterTaskDefinition
+                  - ecs:UpdateService
+                Resource: '*'
+
+              - Sid: PassECSTaskRoles
+                Effect: Allow
+                Action:
+                  - iam:PassRole
+                Resource:
+                  - !GetAtt ECSTaskExecutionRole.Arn
+                Condition:
+                  StringEquals:
+                    iam:PassedToService: ecs-tasks.amazonaws.com
+
+      Tags:
+        - Key: Name
+          Value: CEP-CodePipeline-Role
+        - Key: Environment
+          Value: Course-End-Project
+
+Outputs:
+
+  ECSTaskExecutionRoleArn:
+    Description: ECS task execution role ARN
+    Value: !GetAtt ECSTaskExecutionRole.Arn
+
+  CodeBuildRoleArn:
+    Description: CodeBuild service role ARN
+    Value: !GetAtt CodeBuildRole.Arn
+
+  CodePipelineRoleArn:
+    Description: CodePipeline service role ARN
+    Value: !GetAtt CodePipelineRole.Arn
