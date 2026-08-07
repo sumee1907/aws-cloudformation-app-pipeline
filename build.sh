@@ -17,6 +17,7 @@ echo "Region: ${AWS_REGION}"
 echo "Bucket: ${S3_BUCKET}"
 echo
 
+# Create S3 bucket if it doesn't exist
 if ! aws s3api head-bucket --bucket "${S3_BUCKET}" 2>/dev/null; then
     echo "Creating S3 bucket..."
 
@@ -26,6 +27,7 @@ if ! aws s3api head-bucket --bucket "${S3_BUCKET}" 2>/dev/null; then
         >/dev/null
 fi
 
+# Enable server-side encryption and block public access
 aws s3api put-bucket-encryption \
     --bucket "${S3_BUCKET}" \
     --server-side-encryption-configuration \
@@ -38,7 +40,8 @@ aws s3api put-public-access-block \
 
 echo "Validating templates..."
 
-for template in network.yaml ecr.yaml main.yaml; do
+# Validate each CloudFormation stack template
+for template in network.yaml ecr.yaml main.yaml iam.yaml; do
     aws cloudformation validate-template \
         --template-body "file://${CFN_DIR}/${template}" \
         --region "${AWS_REGION}" \
@@ -49,6 +52,7 @@ done
 
 echo "Packaging templates..."
 
+# Package the main CloudFormation template and uploading it as an artifact to the S3 bucket
 aws cloudformation package \
     --template-file "${MAIN_TEMPLATE}" \
     --s3-bucket "${S3_BUCKET}" \
