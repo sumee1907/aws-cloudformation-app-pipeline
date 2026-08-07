@@ -2,9 +2,11 @@
 
 set -euo pipefail
 
+PROJECT_NAME="cep"
 STACK_NAME="CEP-Main"
 AWS_REGION="us-east-1"
-
+AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
+S3_BUCKET="${PROJECT_NAME}-${AWS_ACCOUNT_ID}-${AWS_REGION}"
 CFN_DIR="cloudformation"
 PACKAGED_TEMPLATE="${CFN_DIR}/main-packaged.yaml"
 
@@ -17,6 +19,7 @@ echo "AWS Region : ${AWS_REGION}"
 echo "Stack Name : ${STACK_NAME}"
 echo
 
+# Check if the packaged template exists
 if [[ ! -f "${PACKAGED_TEMPLATE}" ]]; then
     echo "ERROR: ${PACKAGED_TEMPLATE} does not exist."
     echo "Run ./build.sh first."
@@ -32,6 +35,8 @@ aws cloudformation deploy \
     --capabilities \
         CAPABILITY_NAMED_IAM \
         CAPABILITY_AUTO_EXPAND \
+    --parameter-overrides \
+        ProjectBucketName="${S3_BUCKET}" \
     --no-fail-on-empty-changeset \
     --tags \
         Project=Course-End-Project \
