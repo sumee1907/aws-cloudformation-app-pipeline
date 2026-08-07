@@ -1,6 +1,13 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Root CloudFormation stack for the course end project
 
+Parameters:
+
+  ProjectBucketName:
+    Type: String
+    Description: Shared S3 bucket for the course end project
+    
+  
 Resources:
 
   NetworkStack:
