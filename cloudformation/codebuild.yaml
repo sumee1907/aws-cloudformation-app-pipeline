@@ -18,7 +18,6 @@ Resources:
       ServiceRole: !Ref CodeBuildRoleArn
       Source:
         Type: CODEPIPELINE
-        BuildSpec: course-end-project/pipeline/buildspec.yml
       Artifacts:
         Type: CODEPIPELINE
       Environment:
