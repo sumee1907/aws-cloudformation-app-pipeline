@@ -228,8 +228,8 @@ Resources:
       TargetType: ip
 
       HealthCheckPath: /
-      HealthCheckIntervalSeconds: 5
-      HealthCheckTimeoutSeconds: 10
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
       UnhealthyThresholdCount: 2
 
@@ -252,8 +252,8 @@ Resources:
       TargetType: ip
 
       HealthCheckPath: /
-      HealthCheckIntervalSeconds: 5
-      HealthCheckTimeoutSeconds: 10
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
       UnhealthyThresholdCount: 2
 
