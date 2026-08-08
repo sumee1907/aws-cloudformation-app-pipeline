@@ -194,9 +194,12 @@ Resources:
                   - iam:PassRole
                 Resource:
                   - !GetAtt ECSTaskExecutionRole.Arn
+                  - !GetAtt ECSInfrastructureRole.Arn
                 Condition:
-                  StringEquals:
-                    iam:PassedToService: ecs-tasks.amazonaws.com
+                  StringEqualsIfExists:
+                    iam:PassedToService:
+                      - ecs-tasks.amazonaws.com
+                      - ecs.amazonaws.com
 
               - Sid: UseGitHubConnection
                 Effect: Allow
