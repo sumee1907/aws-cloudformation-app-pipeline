@@ -106,7 +106,7 @@ Resources:
       Cluster: !Ref ECSCluster
       TaskDefinition: !Ref BackendTaskDefinition
 
-      DesiredCount: 0
+      DesiredCount: 2
 
       LaunchType: FARGATE
       PlatformVersion: LATEST
@@ -175,7 +175,7 @@ Resources:
       Cluster: !Ref ECSCluster
       TaskDefinition: !Ref FrontendTaskDefinition
 
-      DesiredCount: 0
+      DesiredCount: 2
 
       LaunchType: FARGATE
       PlatformVersion: LATEST
