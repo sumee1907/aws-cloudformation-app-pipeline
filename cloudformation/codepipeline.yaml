@@ -57,6 +57,18 @@ Resources:
         Type: S3
         Location: !Ref ProjectBucketName
       
+      Triggers:
+        - ProviderType: CodeStarSourceConnection
+          GitConfiguration:
+            SourceActionName: GitHub
+            Push:
+              - Branches:
+                  Includes:
+                    - main
+                FilePaths:
+                  Includes:
+                    - application/**
+
       Stages:
         - Name: Source
           Actions:
@@ -70,7 +82,6 @@ Resources:
                 ConnectionArn: !Ref GitHubConnectionArn
                 FullRepositoryId: !Sub "${GitHubOwner}/${GitHubRepository}"
                 BranchName: !Ref GitHubBranch
-                DetectChanges: true
               OutputArtifacts:
                 - Name: SourceOutput
               RunOrder: 1
