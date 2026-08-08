@@ -217,21 +217,54 @@ Resources:
         - Key: Environment
           Value: Course-End-Project
 
-  FrontendTargetGroup:
+  # ---------------- Frontend Target Groups ----------------
+  FrontendBlueTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: CEP-Frontend-TG
+      Name: CEP-Frontend-Blue-TG
       VpcId: !Ref VPC
       Port: 80
       Protocol: HTTP
       TargetType: ip
+
       HealthCheckPath: /
-      HealthCheckIntervalSeconds: 30
+      HealthCheckIntervalSeconds: 5
       HealthCheckTimeoutSeconds: 10
-      HealthyThresholdCount: 5
-      UnhealthyThresholdCount: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
+
       Matcher:
         HttpCode: 200
+
+      Tags:
+        - Key: Name
+          Value: CEP-Frontend-Blue-TG
+        - Key: Environment
+          Value: Course-End-Project
+
+  FrontendGreenTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: CEP-Frontend-Green-TG
+      VpcId: !Ref VPC
+      Port: 80
+      Protocol: HTTP
+      TargetType: ip
+
+      HealthCheckPath: /
+      HealthCheckIntervalSeconds: 5
+      HealthCheckTimeoutSeconds: 10
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
+
+      Matcher:
+        HttpCode: 200
+
+      Tags:
+        - Key: Name
+          Value: CEP-Frontend-Green-TG
+        - Key: Environment
+          Value: Course-End-Project
 
   HTTPListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
@@ -240,8 +273,29 @@ Resources:
       Port: 80
       Protocol: HTTP
       DefaultActions:
+      - Type: fixed-response
+        FixedResponseConfig:
+          StatusCode: '404'
+          ContentType: text/plain
+          MessageBody: Not Found
+
+  FrontendListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn: !Ref HTTPListener
+      Priority: 1
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - '/*'
+      Actions:
         - Type: forward
-          TargetGroupArn: !Ref FrontendTargetGroup
+          ForwardConfig:
+            TargetGroups:
+              - TargetGroupArn: !Ref FrontendBlueTargetGroup
+                Weight: 1
+              - TargetGroupArn: !Ref FrontendGreenTargetGroup
+                Weight: 0
 
 Outputs:
   VPCId:
@@ -272,9 +326,21 @@ Outputs:
     Description: Backend Security Group ID
     Value: !Ref BackendSG
 
-  FrontendTargetGroupArn:
-    Description: Frontend Target Group ARN
-    Value: !Ref FrontendTargetGroup
+  FrontendBlueTargetGroupArn:
+    Description: Frontend blue target group ARN
+    Value: !Ref FrontendBlueTargetGroup
+
+  FrontendGreenTargetGroupArn:
+    Description: Frontend green target group ARN
+    Value: !Ref FrontendGreenTargetGroup
+
+  FrontendListenerRuleArn:
+    Description: Frontend production listener rule ARN
+    Value: !Ref FrontendListenerRule
+
+  HTTPListenerArn:
+    Description: ALB HTTP listener ARN
+    Value: !Ref HTTPListener
 
   ALBDNSName:
     Description: ALB DNS Name

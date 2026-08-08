@@ -17,6 +17,30 @@ Parameters:
 
 Resources:
 
+  # ---------------- ECS Infrastructure Role ----------------
+
+  ECSInfrastructureRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: CEP-ECS-Infrastructure-Role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSInfrastructureRolePolicyForLoadBalancers
+
+      Tags:
+        - Key: Name
+          Value: CEP-ECS-Infrastructure-Role
+        - Key: Environment
+          Value: Course-End-Project
+
   # ---------------- ECS Task Execution Role ----------------
 
   ECSTaskExecutionRole:
@@ -200,3 +224,7 @@ Outputs:
   CodePipelineRoleArn:
     Description: CodePipeline service role ARN
     Value: !GetAtt CodePipelineRole.Arn
+
+  ECSInfrastructureRoleArn:
+    Description: ECS infrastructure role ARN for blue/green load balancing
+    Value: !GetAtt ECSInfrastructureRole.Arn

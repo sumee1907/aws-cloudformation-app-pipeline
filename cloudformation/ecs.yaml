@@ -15,7 +15,13 @@ Parameters:
   BackendSecurityGroupId:
     Type: AWS::EC2::SecurityGroup::Id
 
-  FrontendTargetGroupArn:
+  FrontendBlueTargetGroupArn:
+    Type: String
+
+  FrontendGreenTargetGroupArn:
+    Type: String
+
+  FrontendListenerRuleArn:
     Type: String
 
   FrontendRepositoryUri:
@@ -25,6 +31,9 @@ Parameters:
     Type: String
 
   ECSTaskExecutionRoleArn:
+    Type: String
+
+  ECSInfrastructureRoleArn:
     Type: String
 
 Resources:
@@ -174,11 +183,16 @@ Resources:
       ServiceName: CEP-Frontend-Service
       Cluster: !Ref ECSCluster
       TaskDefinition: !Ref FrontendTaskDefinition
-
       DesiredCount: 2
 
       LaunchType: FARGATE
       PlatformVersion: LATEST
+
+      DeploymentController:
+        Type: ECS
+      DeploymentConfiguration:
+        Strategy: BLUE_GREEN
+        BakeTimeInMinutes: 2
 
       HealthCheckGracePeriodSeconds: 60
 
@@ -192,9 +206,13 @@ Resources:
             - !Ref FrontendSecurityGroupId
 
       LoadBalancers:
-        - ContainerName: frontend
-          ContainerPort: 80
-          TargetGroupArn: !Ref FrontendTargetGroupArn
+      - ContainerName: frontend
+        ContainerPort: 80
+        TargetGroupArn: !Ref FrontendBlueTargetGroupArn
+        AdvancedConfiguration:
+          AlternateTargetGroupArn: !Ref FrontendGreenTargetGroupArn
+          ProductionListenerRule: !Ref FrontendListenerRuleArn
+          RoleArn: !Ref ECSInfrastructureRoleArn
 
       ServiceConnectConfiguration:
         Enabled: true

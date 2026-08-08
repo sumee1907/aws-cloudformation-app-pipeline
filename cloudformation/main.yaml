@@ -66,10 +66,13 @@ Resources:
         PrivateSubnetBId: !GetAtt NetworkStack.Outputs.PrivateSubnetBId
         FrontendSecurityGroupId: !GetAtt NetworkStack.Outputs.FrontendSecurityGroupId
         BackendSecurityGroupId: !GetAtt NetworkStack.Outputs.BackendSecurityGroupId
-        FrontendTargetGroupArn: !GetAtt NetworkStack.Outputs.FrontendTargetGroupArn
+        FrontendBlueTargetGroupArn: !GetAtt NetworkStack.Outputs.FrontendBlueTargetGroupArn
+        FrontendGreenTargetGroupArn: !GetAtt NetworkStack.Outputs.FrontendGreenTargetGroupArn
+        FrontendListenerRuleArn: !GetAtt NetworkStack.Outputs.FrontendListenerRuleArn
         FrontendRepositoryUri: !GetAtt ECRStack.Outputs.FrontendRepositoryUri
         BackendRepositoryUri: !GetAtt ECRStack.Outputs.BackendRepositoryUri
         ECSTaskExecutionRoleArn: !GetAtt IAMStack.Outputs.ECSTaskExecutionRoleArn
+        ECSInfrastructureRoleArn: !GetAtt IAMStack.Outputs.ECSInfrastructureRoleArn
 
   CodeBuildStack:
     Type: AWS::CloudFormation::Stack
