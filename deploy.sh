@@ -45,12 +45,4 @@ aws cloudformation deploy \
         Environment=Course-End-Project
 
 echo
-echo "Deployment complete."
-echo
-echo "Stack outputs:"
-
-aws cloudformation describe-stacks \
-    --stack-name "${STACK_NAME}" \
-    --region "${AWS_REGION}" \
-    --query "Stacks[0].Outputs" \
-    --output table
+echo "The Deployment is complete!"
