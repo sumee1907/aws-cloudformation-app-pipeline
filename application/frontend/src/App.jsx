@@ -26,11 +26,11 @@ function App() {
   }
 
   useEffect(() => {
-    getBackendTime();
-
+    const timeoutId = window.setTimeout(getBackendTime, 0);
     const intervalId = window.setInterval(getBackendTime, 1000);
 
     return () => {
+      window.clearTimeout(timeoutId);
       window.clearInterval(intervalId);
     };
   }, []);
