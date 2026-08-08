@@ -173,6 +173,13 @@ Resources:
                   StringEquals:
                     iam:PassedToService: ecs-tasks.amazonaws.com
 
+              - Sid: UseGitHubConnection
+                Effect: Allow
+                Action:
+                  - codeconnections:UseConnection
+                Resource:
+                  - arn:aws:codeconnections:us-east-1:387125168819:connection/7b6244c7-96bf-4dd1-8930-3082962ad32a
+
       Tags:
         - Key: Name
           Value: CEP-CodePipeline-Role
