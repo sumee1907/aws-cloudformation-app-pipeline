@@ -100,7 +100,7 @@ Resources:
         BackendServiceName: !GetAtt ECSStack.Outputs.BackendServiceName
         GitHubConnectionArn: !Ref GitHubConnectionArn
         GitHubOwner: void269
-        GitHubRepository: Cloud-Computing-and-DevOps-Certification-Program
+        GitHubRepository: aws-cloudformation-app-pipeline
         GitHubBranch: main
         TestProjectName: !GetAtt CodeBuildStack.Outputs.TestProjectName
   
