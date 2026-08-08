@@ -66,8 +66,8 @@ Resources:
                   Includes:
                     - main
                 FilePaths:
-                  Includes:
-                    - application/**
+                  Excludes:
+                    - cloudformation/**
 
       Stages:
         - Name: Source
