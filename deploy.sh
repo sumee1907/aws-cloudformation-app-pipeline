@@ -9,6 +9,7 @@ AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
 S3_BUCKET="${PROJECT_NAME}-${AWS_ACCOUNT_ID}-${AWS_REGION}"
 CFN_DIR="cloudformation"
 PACKAGED_TEMPLATE="${CFN_DIR}/main-packaged.yaml"
+GITHUB_CONNECTION_ARN="arn:aws:codeconnections:us-east-1:387125168819:connection/7b6244c7-96bf-4dd1-8930-3082962ad32a"
 
 echo
 echo "============================================================"
@@ -37,6 +38,7 @@ aws cloudformation deploy \
         CAPABILITY_AUTO_EXPAND \
     --parameter-overrides \
         ProjectBucketName="${S3_BUCKET}" \
+        GitHubConnectionArn="${GITHUB_CONNECTION_ARN}" \
     --no-fail-on-empty-changeset \
     --tags \
         Project=Course-End-Project \

@@ -6,6 +6,10 @@ Parameters:
   ProjectBucketName:
     Type: String
     Description: Shared S3 bucket for the course end project
+  
+  GitHubConnectionArn:
+    Type: String
+    Description: Existing AWS CodeConnections ARN for GitHub
     
   
 Resources:
@@ -79,6 +83,26 @@ Resources:
         FrontendRepositoryUri: !GetAtt ECRStack.Outputs.FrontendRepositoryUri
         BackendRepositoryUri: !GetAtt ECRStack.Outputs.BackendRepositoryUri
 
+  CodePipelineStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - IAMStack
+      - CodeBuildStack
+      - ECSStack
+    Properties:
+      TemplateURL: ./codepipeline.yaml
+      Parameters:
+        ProjectBucketName: !Ref ProjectBucketName
+        CodePipelineRoleArn: !GetAtt IAMStack.Outputs.CodePipelineRoleArn
+        CodeBuildProjectName: !GetAtt CodeBuildStack.Outputs.CodeBuildProjectName
+        ECSClusterName: !GetAtt ECSStack.Outputs.ECSClusterName
+        FrontendServiceName: !GetAtt ECSStack.Outputs.FrontendServiceName
+        BackendServiceName: !GetAtt ECSStack.Outputs.BackendServiceName
+        GitHubConnectionArn: !Ref GitHubConnectionArn
+        GitHubOwner: void269
+        GitHubRepository: Cloud-Computing-and-DevOps-Certification-Program
+        GitHubBranch: main
+  
 Outputs:
 
   NetworkStackId:

@@ -1,0 +1,134 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: AWS CodePipeline for the Course End Project
+
+Parameters:
+
+  ProjectBucketName:
+    Type: String
+    Description: S3 bucket used for pipeline artifacts
+
+  CodePipelineRoleArn:
+    Type: String
+    Description: CodePipeline IAM Role ARN
+
+  CodeBuildProjectName:
+    Type: String
+    Description: CodeBuild project name
+
+  ECSClusterName:
+    Type: String
+    Description: ECS Cluster Name
+
+  FrontendServiceName:
+    Type: String
+    Description: Frontend ECS Service Name
+
+  BackendServiceName:
+    Type: String
+    Description: Backend ECS Service Name
+
+  GitHubConnectionArn:
+    Type: String
+    Description: AWS CodeConnections ARN
+
+  GitHubOwner:
+    Type: String
+    Description: GitHub Organization or User
+
+  GitHubRepository:
+    Type: String
+    Description: GitHub Repository Name
+
+  GitHubBranch:
+    Type: String
+    Default: main
+    Description: GitHub Branch
+
+Resources:
+  CodePipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: CEP-Pipeline
+      RoleArn: !Ref CodePipelineRoleArn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ProjectBucketName
+      
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: GitHub
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Provider: CodeStarSourceConnection
+                Version: '1'
+              Configuration:
+                ConnectionArn: !Ref GitHubConnectionArn
+                FullRepositoryId: !Sub "${GitHubOwner}/${GitHubRepository}"
+                BranchName: !Ref GitHubBranch
+                DetectChanges: true
+              OutputArtifacts:
+                - Name: SourceOutput
+              RunOrder: 1
+        
+        - Name: Build
+          Actions:
+            - Name: BuildDockerImages
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              Configuration:
+                ProjectName: !Ref CodeBuildProjectName
+              InputArtifacts:
+                - Name: SourceOutput
+              OutputArtifacts:
+                - Name: BuildOutput
+              RunOrder: 1
+        
+        - Name: Deploy
+          Actions:
+            - Name: DeployBackend
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: ECS
+                Version: '1'
+              Configuration:
+                ClusterName: !Ref ECSClusterName
+                ServiceName: !Ref BackendServiceName
+                FileName: imagedefinitions-backend.json
+              InputArtifacts:
+                - Name: BuildOutput
+              RunOrder: 1
+            
+            - Name: DeployFrontend
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: ECS
+                Version: '1'
+              Configuration:
+                ClusterName: !Ref ECSClusterName
+                ServiceName: !Ref FrontendServiceName
+                FileName: imagedefinitions-frontend.json
+              InputArtifacts:
+                - Name: BuildOutput
+              RunOrder: 2
+
+      Tags:
+        - Key: Name
+          Value: CEP-Pipeline
+        - Key: Environment
+          Value: Course-End-Project
+
+Outputs:
+  CodePipelineName:
+    Description: CodePipeline Name
+    Value: !Ref CodePipeline
+
+  CodePipelineArn:
+    Description: CodePipeline ARN
+    Value: !Sub "arn:${AWS::Partition}:codepipeline:${AWS::Region}:${AWS::AccountId}:${CodePipeline}"
