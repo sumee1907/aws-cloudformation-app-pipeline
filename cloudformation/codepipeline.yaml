@@ -44,6 +44,9 @@ Parameters:
     Default: main
     Description: GitHub Branch
 
+  TestProjectName:
+    Type: String
+
 Resources:
   CodePipeline:
     Type: AWS::CodePipeline::Pipeline
@@ -88,6 +91,20 @@ Resources:
                 - Name: BuildOutput
               RunOrder: 1
         
+        - Name: Test
+          Actions:
+            - Name: RunUnitTests
+              ActionTypeId:
+                Category: Test
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              Configuration:
+                ProjectName: !Ref TestProjectName
+              InputArtifacts:
+                - Name: SourceOutput
+              RunOrder: 1
+
         - Name: Deploy
           Actions:
             - Name: DeployBackend

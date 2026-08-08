@@ -38,6 +38,26 @@ Resources:
         - Key: Environment
           Value: Course-End-Project
 
+  TestProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: CEP-Test
+      ServiceRole: !Ref CodeBuildRoleArn
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: buildspec-test.yml
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:7.0
+      Tags:
+        - Key: Name
+          Value: CEP-CodeBuild-Test
+        - Key: Environment
+          Value: Course-End-Project
+
 Outputs:
   CodeBuildProjectName:
     Description: Name of the CodeBuild project
@@ -45,3 +65,5 @@ Outputs:
   CodeBuildProjectArn:
     Description: ARN of the CodeBuild project
     Value: !GetAtt CodeBuildProject.Arn
+  TestProjectName:
+    Value: !Ref TestProject
