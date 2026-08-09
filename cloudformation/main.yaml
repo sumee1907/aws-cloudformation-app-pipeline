@@ -43,14 +43,6 @@ Parameters:
     Type: String
     Description: Private subnet B CIDR block
 
-  FrontendPort:
-    Type: Number
-    Description: Frontend application port
-
-  BackendPort:
-    Type: Number
-    Description: Backend application port
-
   FrontendDesiredCount:
     Type: Number
     Description: Number of frontend ECS tasks
@@ -108,8 +100,6 @@ Resources:
         PublicSubnetBCidr: !Ref PublicSubnetBCidr
         PrivateSubnetACidr: !Ref PrivateSubnetACidr
         PrivateSubnetBCidr: !Ref PrivateSubnetBCidr
-        FrontendPort: !Ref FrontendPort
-        BackendPort: !Ref BackendPort
         ProjectName: !Ref ProjectName
         Environment: !Ref Environment
       Tags:
@@ -181,8 +171,6 @@ Resources:
         BackendMemory: !Ref BackendMemory
         FrontendBakeTimeMinutes: !Ref FrontendBakeTimeMinutes
         LogRetentionDays: !Ref LogRetentionDays
-        FrontendPort: !Ref FrontendPort
-        BackendPort: !Ref BackendPort
         ProjectName: !Ref ProjectName
         Environment: !Ref Environment
       Tags:

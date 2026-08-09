@@ -54,7 +54,7 @@ fi
 
 echo
 
-if [[ "${DELETE_S3_BUCKET}" == "true" ]]; then
+if [[ "${DELETE_S3_ON_DESTROY}" == "true" ]]; then
 
     if aws s3api head-bucket \
         --bucket "${S3_BUCKET}" \
@@ -72,7 +72,7 @@ if [[ "${DELETE_S3_BUCKET}" == "true" ]]; then
     fi
 
 else
-    echo "S3 bucket retained because DELETE_S3_BUCKET=${DELETE_S3_BUCKET}"
+    echo "S3 bucket retained because DELETE_S3_ON_DESTROY=${DELETE_S3_ON_DESTROY}."
 fi
 
 rm -f cloudformation/main-packaged.yaml

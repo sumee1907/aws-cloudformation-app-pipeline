@@ -60,12 +60,6 @@ Parameters:
   LogRetentionDays:
     Type: Number
 
-  FrontendPort:
-    Type: Number
-
-  BackendPort:
-    Type: Number
-
   ProjectName:
     Type: String
     Description: Project name used for ECS resource naming
@@ -126,7 +120,7 @@ Resources:
 
           PortMappings:
             - Name: backend
-              ContainerPort: !Ref BackendPort
+              ContainerPort: 3000
               Protocol: tcp
               AppProtocol: http
 
@@ -135,7 +129,7 @@ Resources:
               Value: production
 
             - Name: PORT
-              Value: !Sub '${BackendPort}'
+              Value: 3000
 
           LogConfiguration:
             LogDriver: awslogs
@@ -175,7 +169,7 @@ Resources:
             DiscoveryName: backend
             ClientAliases:
               - DnsName: backend
-                Port: !Ref BackendPort
+                Port: 3000
 
   # ---------------- Frontend Task Definition ----------------
 
@@ -199,7 +193,7 @@ Resources:
 
           PortMappings:
             - Name: frontend
-              ContainerPort: !Ref FrontendPort
+              ContainerPort: 80
               Protocol: tcp
               AppProtocol: http
 
@@ -247,7 +241,7 @@ Resources:
 
       LoadBalancers:
         - ContainerName: frontend
-          ContainerPort: !Ref FrontendPort
+          ContainerPort: 80
           TargetGroupArn: !Ref FrontendBlueTargetGroupArn
           AdvancedConfiguration:
             AlternateTargetGroupArn: !Ref FrontendGreenTargetGroupArn

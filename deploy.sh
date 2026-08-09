@@ -54,8 +54,6 @@ aws cloudformation deploy \
         PublicSubnetBCidr="${PUBLIC_SUBNET_B_CIDR}" \
         PrivateSubnetACidr="${PRIVATE_SUBNET_A_CIDR}" \
         PrivateSubnetBCidr="${PRIVATE_SUBNET_B_CIDR}" \
-        FrontendPort="${FRONTEND_PORT}" \
-        BackendPort="${BACKEND_PORT}" \
         FrontendDesiredCount="${FRONTEND_DESIRED_COUNT}" \
         BackendDesiredCount="${BACKEND_DESIRED_COUNT}" \
         FrontendCpu="${FRONTEND_CPU}" \
@@ -66,7 +64,7 @@ aws cloudformation deploy \
         LogRetentionDays="${LOG_RETENTION_DAYS}" \
         ProjectName="${PROJECT_NAME}" \
         Environment="${ENVIRONMENT}" \
-        EmptyOnDelete="${EMPTY_ON_DELETE}" \
+        ECREmptyOnDelete="${ECR_EMPTY_ON_DELETE}" \
     --no-fail-on-empty-changeset \
     --tags \
         Project=Course-End-Project \

@@ -23,14 +23,6 @@ Parameters:
     Type: String
     Description: Private subnet B CIDR block
 
-  FrontendPort:
-    Type: Number
-    Description: Frontend application port
-
-  BackendPort:
-    Type: Number
-    Description: Backend application port
-
   ProjectName:
     Type: String
     Description: Project name used for resource naming
@@ -193,8 +185,8 @@ Resources:
       GroupDescription: ALB Security Group
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: !Ref FrontendPort
-          ToPort: !Ref FrontendPort
+          FromPort: 80
+          ToPort: 80
           CidrIp: 0.0.0.0/0
       Tags:
         - Key: Name
@@ -209,8 +201,8 @@ Resources:
       GroupDescription: Frontend SG
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: !Ref FrontendPort
-          ToPort: !Ref FrontendPort
+          FromPort: 80
+          ToPort: 80
           SourceSecurityGroupId: !Ref ALBSG
       Tags:
         - Key: Name
@@ -225,8 +217,8 @@ Resources:
       GroupDescription: Backend security group
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: !Ref BackendPort
-          ToPort: !Ref BackendPort
+          FromPort: 3000
+          ToPort: 3000
           SourceSecurityGroupId: !Ref FrontendSG
       Tags:
         - Key: Name
@@ -258,7 +250,7 @@ Resources:
     Properties:
       Name: !Sub '${ProjectName}-Frontend-Blue-TG'
       VpcId: !Ref VPC
-      Port: !Ref FrontendPort
+      Port: 80
       Protocol: HTTP
       TargetType: ip
 
@@ -282,7 +274,7 @@ Resources:
     Properties:
       Name: !Sub '${ProjectName}-Frontend-Green-TG'
       VpcId: !Ref VPC
-      Port: !Ref FrontendPort
+      Port: 80
       Protocol: HTTP
       TargetType: ip
 
@@ -305,7 +297,7 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       LoadBalancerArn: !Ref ALB
-      Port: !Ref FrontendPort
+      Port: 80
       Protocol: HTTP
       DefaultActions:
         - Type: fixed-response
