@@ -15,6 +15,14 @@ Parameters:
     Type: String
     Description: Backend ECR repository ARN
 
+  ProjectName:
+    Type: String
+    Description: Project name used for IAM resource naming
+
+  Environment:
+    Type: String
+    Description: Environment name used for IAM resource naming
+
 Resources:
 
   # ---------------- ECS Infrastructure Role ----------------
@@ -22,7 +30,7 @@ Resources:
   ECSInfrastructureRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: CEP-ECS-Infrastructure-Role
+      RoleName: !Sub '${ProjectName}-ECS-Infrastructure-Role'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -37,16 +45,16 @@ Resources:
 
       Tags:
         - Key: Name
-          Value: CEP-ECS-Infrastructure-Role
+          Value: !Sub '${ProjectName}-ECS-Infrastructure-Role'
         - Key: Environment
-          Value: Course-End-Project
+          Value: !Ref Environment
 
   # ---------------- ECS Task Execution Role ----------------
 
   ECSTaskExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: CEP-ECS-Task-Execution-Role
+      RoleName: !Sub '${ProjectName}-ECS-Task-Execution-Role'
 
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -63,16 +71,16 @@ Resources:
 
       Tags:
         - Key: Name
-          Value: CEP-ECS-Task-Execution-Role
+          Value: !Sub '${ProjectName}-ECS-Task-Execution-Role'
         - Key: Environment
-          Value: Course-End-Project
+          Value: !Ref Environment
 
   # ---------------- CodeBuild Role ----------------
 
   CodeBuildRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: {"Fn::Join": ["", [{"Ref": "AWS::Region"}, "-CEP-CodeBuild-Role"]]}
+      RoleName: !Sub '${ProjectName}-CodeBuild-Role'
 
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -130,16 +138,16 @@ Resources:
 
       Tags:
         - Key: Name
-          Value: CEP-CodeBuild-Role
+          Value: !Sub '${ProjectName}-CodeBuild-Role'
         - Key: Environment
-          Value: Course-End-Project
+          Value: !Ref Environment
 
   # ---------------- CodePipeline Role ----------------
 
   CodePipelineRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: {"Fn::Join": ["", [{"Ref": "AWS::Region"}, "-CEP-CodePipeline-Role"]]}
+      RoleName: !Sub '${ProjectName}-CodePipeline-Role'
 
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -210,9 +218,9 @@ Resources:
 
       Tags:
         - Key: Name
-          Value: CEP-CodePipeline-Role
+          Value: !Sub '${ProjectName}-CodePipeline-Role'
         - Key: Environment
-          Value: Course-End-Project
+          Value: !Ref Environment
 
 Outputs:
 

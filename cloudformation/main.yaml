@@ -6,12 +6,95 @@ Parameters:
   ProjectBucketName:
     Type: String
     Description: Shared S3 bucket for the course end project
-  
+
   GitHubConnectionArn:
     Type: String
     Description: Existing AWS CodeConnections ARN for GitHub
-    
-  
+
+  GitHubOwner:
+    Type: String
+    Description: GitHub username or organization
+
+  GitHubRepository:
+    Type: String
+    Description: GitHub repository name
+
+  GitHubBranch:
+    Type: String
+    Description: GitHub branch used by CodePipeline
+
+  VPCCidr:
+    Type: String
+    Description: VPC CIDR block
+
+  PublicSubnetACidr:
+    Type: String
+    Description: Public subnet A CIDR block
+
+  PublicSubnetBCidr:
+    Type: String
+    Description: Public subnet B CIDR block
+
+  PrivateSubnetACidr:
+    Type: String
+    Description: Private subnet A CIDR block
+
+  PrivateSubnetBCidr:
+    Type: String
+    Description: Private subnet B CIDR block
+
+  FrontendPort:
+    Type: Number
+    Description: Frontend application port
+
+  BackendPort:
+    Type: Number
+    Description: Backend application port
+
+  FrontendDesiredCount:
+    Type: Number
+    Description: Number of frontend ECS tasks
+
+  BackendDesiredCount:
+    Type: Number
+    Description: Number of backend ECS tasks
+
+  FrontendCpu:
+    Type: String
+    Description: Frontend ECS task CPU
+
+  FrontendMemory:
+    Type: String
+    Description: Frontend ECS task memory
+
+  BackendCpu:
+    Type: String
+    Description: Backend ECS task CPU
+
+  BackendMemory:
+    Type: String
+    Description: Backend ECS task memory
+
+  FrontendBakeTimeMinutes:
+    Type: Number
+    Description: Frontend blue/green bake time in minutes
+
+  LogRetentionDays:
+    Type: Number
+    Description: CloudWatch log retention in days
+
+  ProjectName:
+    Type: String
+    Description: Project name used for resource naming
+
+  EmptyOnDelete:
+    Type: String
+    Description: If true, the ECR repositories will be emptied when the stack is deleted. If false, the stack deletion will fail if the repositories are not empty.
+
+  Environment:
+    Type: String
+    Description: Environment name used for resource naming
+
 Resources:
 
   NetworkStack:
@@ -19,22 +102,36 @@ Resources:
     Properties:
       TemplateURL: ./network.yaml
       TimeoutInMinutes: 20
+      Parameters:
+        VPCCidr: !Ref VPCCidr
+        PublicSubnetACidr: !Ref PublicSubnetACidr
+        PublicSubnetBCidr: !Ref PublicSubnetBCidr
+        PrivateSubnetACidr: !Ref PrivateSubnetACidr
+        PrivateSubnetBCidr: !Ref PrivateSubnetBCidr
+        FrontendPort: !Ref FrontendPort
+        BackendPort: !Ref BackendPort
+        ProjectName: !Ref ProjectName
+        Environment: !Ref Environment
       Tags:
         - Key: Name
-          Value: CEP-Network-Nested-Stack
+          Value: !Sub '${ProjectName}-Network-Nested-Stack'
         - Key: Environment
-          Value: Course-End-Project
+          Value: !Ref Environment
 
   ECRStack:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: ./ecr.yaml
       TimeoutInMinutes: 10
+      Parameters:
+        ProjectName: !Ref ProjectName
+        Environment: !Ref Environment
+        EmptyOnDelete: !Ref EmptyOnDelete
       Tags:
         - Key: Name
-          Value: CEP-ECR-Nested-Stack
+          Value: !Sub '${ProjectName}-ECR-Nested-Stack'
         - Key: Environment
-          Value: Course-End-Project
+          Value: !Ref Environment
 
   IAMStack:
     Type: AWS::CloudFormation::Stack
@@ -47,11 +144,13 @@ Resources:
         ProjectBucketName: !Ref ProjectBucketName
         FrontendRepositoryArn: !GetAtt ECRStack.Outputs.FrontendRepositoryArn
         BackendRepositoryArn: !GetAtt ECRStack.Outputs.BackendRepositoryArn
+        ProjectName: !Ref ProjectName
+        Environment: !Ref Environment
       Tags:
         - Key: Name
-          Value: CEP-IAM-Nested-Stack
+          Value: !Sub '${ProjectName}-IAM-Nested-Stack'
         - Key: Environment
-          Value: Course-End-Project
+          Value: !Ref Environment
 
   ECSStack:
     Type: AWS::CloudFormation::Stack
@@ -73,6 +172,23 @@ Resources:
         BackendRepositoryUri: !GetAtt ECRStack.Outputs.BackendRepositoryUri
         ECSTaskExecutionRoleArn: !GetAtt IAMStack.Outputs.ECSTaskExecutionRoleArn
         ECSInfrastructureRoleArn: !GetAtt IAMStack.Outputs.ECSInfrastructureRoleArn
+        FrontendDesiredCount: !Ref FrontendDesiredCount
+        BackendDesiredCount: !Ref BackendDesiredCount
+        FrontendCpu: !Ref FrontendCpu
+        FrontendMemory: !Ref FrontendMemory
+        BackendCpu: !Ref BackendCpu
+        BackendMemory: !Ref BackendMemory
+        FrontendBakeTimeMinutes: !Ref FrontendBakeTimeMinutes
+        LogRetentionDays: !Ref LogRetentionDays
+        FrontendPort: !Ref FrontendPort
+        BackendPort: !Ref BackendPort
+        ProjectName: !Ref ProjectName
+        Environment: !Ref Environment
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-ECS-Nested-Stack'
+        - Key: Environment
+          Value: !Ref Environment
 
   CodeBuildStack:
     Type: AWS::CloudFormation::Stack
@@ -85,6 +201,13 @@ Resources:
         CodeBuildRoleArn: !GetAtt IAMStack.Outputs.CodeBuildRoleArn
         FrontendRepositoryUri: !GetAtt ECRStack.Outputs.FrontendRepositoryUri
         BackendRepositoryUri: !GetAtt ECRStack.Outputs.BackendRepositoryUri
+        ProjectName: !Ref ProjectName
+        Environment: !Ref Environment
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-CodeBuild-Nested-Stack'
+        - Key: Environment
+          Value: !Ref Environment
 
   CodePipelineStack:
     Type: AWS::CloudFormation::Stack
@@ -98,15 +221,23 @@ Resources:
         ProjectBucketName: !Ref ProjectBucketName
         CodePipelineRoleArn: !GetAtt IAMStack.Outputs.CodePipelineRoleArn
         CodeBuildProjectName: !GetAtt CodeBuildStack.Outputs.CodeBuildProjectName
+        TestProjectName: !GetAtt CodeBuildStack.Outputs.TestProjectName
         ECSClusterName: !GetAtt ECSStack.Outputs.ECSClusterName
         FrontendServiceName: !GetAtt ECSStack.Outputs.FrontendServiceName
         BackendServiceName: !GetAtt ECSStack.Outputs.BackendServiceName
         GitHubConnectionArn: !Ref GitHubConnectionArn
-        GitHubOwner: void269
-        GitHubRepository: aws-cloudformation-app-pipeline
-        GitHubBranch: main
-        TestProjectName: !GetAtt CodeBuildStack.Outputs.TestProjectName
-  
+        GitHubOwner: !Ref GitHubOwner
+        GitHubRepository: !Ref GitHubRepository
+        GitHubBranch: !Ref GitHubBranch
+        ProjectName: !Ref ProjectName
+        Environment: !Ref Environment
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-CodePipeline-Nested-Stack'
+        - Key: Environment
+          Value: !Ref Environment
+
+
 Outputs:
 
   NetworkStackId:

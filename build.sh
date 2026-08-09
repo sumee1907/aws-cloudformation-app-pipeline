@@ -2,8 +2,12 @@
 
 set -euo pipefail
 
-PROJECT_NAME="cep"
-AWS_REGION="us-east-1"
+if [[ ! -f "config.env" ]]; then
+    echo "ERROR: config.env not found."
+    exit 1
+fi
+
+source config.env
 
 CFN_DIR="cloudformation"
 MAIN_TEMPLATE="${CFN_DIR}/main.yaml"
@@ -27,12 +31,13 @@ if ! aws s3api head-bucket --bucket "${S3_BUCKET}" 2>/dev/null; then
         >/dev/null
 fi
 
-# Enable server-side encryption and block public access
+# Enable server-side encryption
 aws s3api put-bucket-encryption \
     --bucket "${S3_BUCKET}" \
     --server-side-encryption-configuration \
     '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
 
+# Block public access
 aws s3api put-public-access-block \
     --bucket "${S3_BUCKET}" \
     --public-access-block-configuration \
@@ -40,8 +45,7 @@ aws s3api put-public-access-block \
 
 echo "Validating templates..."
 
-# Validate each CloudFormation stack template
-for template in network.yaml ecr.yaml main.yaml iam.yaml ecs.yaml codebuild.yaml; do
+for template in network.yaml ecr.yaml iam.yaml ecs.yaml codebuild.yaml codepipeline.yaml main.yaml; do
     aws cloudformation validate-template \
         --template-body "file://${CFN_DIR}/${template}" \
         --region "${AWS_REGION}" \
@@ -58,7 +62,6 @@ aws s3 rm \
 
 echo "Packaging templates..."
 
-# Packaging the main CloudFormation template and uploading it as an artifact to the S3 bucket
 aws cloudformation package \
     --template-file "${MAIN_TEMPLATE}" \
     --s3-bucket "${S3_BUCKET}" \

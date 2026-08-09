@@ -15,6 +15,10 @@ Parameters:
     Type: String
     Description: CodeBuild project name
 
+  TestProjectName:
+    Type: String
+    Description: CodeBuild test project name
+
   ECSClusterName:
     Type: String
     Description: ECS Cluster Name
@@ -41,22 +45,28 @@ Parameters:
 
   GitHubBranch:
     Type: String
-    Default: main
     Description: GitHub Branch
 
-  TestProjectName:
+  ProjectName:
     Type: String
+    Description: Project name used for resource naming
+
+  Environment:
+    Type: String
+    Description: Environment name used for resource naming
 
 Resources:
+
   CodePipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
-      Name: CEP-Pipeline
+      Name: !Sub '${ProjectName}-Pipeline'
       RoleArn: !Ref CodePipelineRoleArn
+
       ArtifactStore:
         Type: S3
         Location: !Ref ProjectBucketName
-      
+
       Triggers:
         - ProviderType: CodeStarSourceConnection
           GitConfiguration:
@@ -64,12 +74,13 @@ Resources:
             Push:
               - Branches:
                   Includes:
-                    - main
+                    - !Ref GitHubBranch
                 FilePaths:
                   Excludes:
                     - cloudformation/**
 
       Stages:
+
         - Name: Source
           Actions:
             - Name: GitHub
@@ -85,7 +96,7 @@ Resources:
               OutputArtifacts:
                 - Name: SourceOutput
               RunOrder: 1
-        
+
         - Name: Build
           Actions:
             - Name: BuildDockerImages
@@ -101,7 +112,7 @@ Resources:
               OutputArtifacts:
                 - Name: BuildOutput
               RunOrder: 1
-        
+
         - Name: Test
           Actions:
             - Name: RunUnitTests
@@ -118,6 +129,7 @@ Resources:
 
         - Name: Deploy
           Actions:
+
             - Name: DeployBackend
               ActionTypeId:
                 Category: Deploy
@@ -131,7 +143,7 @@ Resources:
               InputArtifacts:
                 - Name: BuildOutput
               RunOrder: 1
-            
+
             - Name: DeployFrontend
               ActionTypeId:
                 Category: Deploy
@@ -148,11 +160,12 @@ Resources:
 
       Tags:
         - Key: Name
-          Value: CEP-Pipeline
+          Value: !Sub '${ProjectName}-Pipeline'
         - Key: Environment
-          Value: Course-End-Project
+          Value: !Ref Environment
 
 Outputs:
+
   CodePipelineName:
     Description: CodePipeline Name
     Value: !Ref CodePipeline

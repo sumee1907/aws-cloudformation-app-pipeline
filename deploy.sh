@@ -2,14 +2,21 @@
 
 set -euo pipefail
 
-PROJECT_NAME="cep"
-STACK_NAME="CEP-Main"
-AWS_REGION="us-east-1"
+CONFIG_FILE="config.env"
+
+if [[ ! -f "${CONFIG_FILE}" ]]; then
+    echo "ERROR: ${CONFIG_FILE} not found."
+    exit 1
+fi
+
+source "${CONFIG_FILE}"
+
 AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
+
 S3_BUCKET="${PROJECT_NAME}-${AWS_ACCOUNT_ID}-${AWS_REGION}"
-CFN_DIR="cloudformation"
-PACKAGED_TEMPLATE="${CFN_DIR}/main-packaged.yaml"
-GITHUB_CONNECTION_ARN="arn:aws:codeconnections:us-east-1:387125168819:connection/7b6244c7-96bf-4dd1-8930-3082962ad32a"
+STACK_NAME="${PROJECT_NAME^^}-Main"
+
+PACKAGED_TEMPLATE="cloudformation/main-packaged.yaml"
 
 echo
 echo "============================================================"
@@ -18,9 +25,9 @@ echo "============================================================"
 echo
 echo "AWS Region : ${AWS_REGION}"
 echo "Stack Name : ${STACK_NAME}"
+echo "S3 Bucket  : ${S3_BUCKET}"
 echo
 
-# Check if the packaged template exists
 if [[ ! -f "${PACKAGED_TEMPLATE}" ]]; then
     echo "ERROR: ${PACKAGED_TEMPLATE} does not exist."
     echo "Run ./build.sh first."
@@ -39,10 +46,31 @@ aws cloudformation deploy \
     --parameter-overrides \
         ProjectBucketName="${S3_BUCKET}" \
         GitHubConnectionArn="${GITHUB_CONNECTION_ARN}" \
+        GitHubOwner="${GITHUB_OWNER}" \
+        GitHubRepository="${GITHUB_REPOSITORY}" \
+        GitHubBranch="${GITHUB_BRANCH}" \
+        VPCCidr="${VPC_CIDR}" \
+        PublicSubnetACidr="${PUBLIC_SUBNET_A_CIDR}" \
+        PublicSubnetBCidr="${PUBLIC_SUBNET_B_CIDR}" \
+        PrivateSubnetACidr="${PRIVATE_SUBNET_A_CIDR}" \
+        PrivateSubnetBCidr="${PRIVATE_SUBNET_B_CIDR}" \
+        FrontendPort="${FRONTEND_PORT}" \
+        BackendPort="${BACKEND_PORT}" \
+        FrontendDesiredCount="${FRONTEND_DESIRED_COUNT}" \
+        BackendDesiredCount="${BACKEND_DESIRED_COUNT}" \
+        FrontendCpu="${FRONTEND_CPU}" \
+        FrontendMemory="${FRONTEND_MEMORY}" \
+        BackendCpu="${BACKEND_CPU}" \
+        BackendMemory="${BACKEND_MEMORY}" \
+        FrontendBakeTimeMinutes="${FRONTEND_BAKE_TIME_MINUTES}" \
+        LogRetentionDays="${LOG_RETENTION_DAYS}" \
+        ProjectName="${PROJECT_NAME}" \
+        Environment="${ENVIRONMENT}" \
+        EmptyOnDelete="${EMPTY_ON_DELETE}" \
     --no-fail-on-empty-changeset \
     --tags \
         Project=Course-End-Project \
         Environment=Course-End-Project
 
 echo
-echo "The Deployment is complete!"
+echo "The deployment is complete!"

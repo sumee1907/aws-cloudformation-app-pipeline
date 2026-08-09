@@ -8,12 +8,18 @@ Parameters:
     Type: String
   BackendRepositoryUri:
     Type: String
+  ProjectName:
+    Type: String
+    Description: Project name used for resource naming
+  Environment:
+    Type: String
+    Description: Environment name used for resource naming
 
 Resources:
   CodeBuildProject:
     Type: AWS::CodeBuild::Project
     Properties:
-      Name: CEP-CodeBuild-Project
+      Name: !Sub '${ProjectName}-CodeBuild-Project'
       Description: CodeBuild project for the course end project
       ServiceRole: !Ref CodeBuildRoleArn
       Source:
@@ -34,14 +40,14 @@ Resources:
             Value: !Ref BackendRepositoryUri
       Tags:
         - Key: Name
-          Value: CEP-CodeBuild-Project
+          Value: !Sub '${ProjectName}-CodeBuild-Project'
         - Key: Environment
-          Value: Course-End-Project
+          Value: !Ref Environment
 
   TestProject:
     Type: AWS::CodeBuild::Project
     Properties:
-      Name: CEP-Test
+      Name: !Sub '${ProjectName}-Test'
       ServiceRole: !Ref CodeBuildRoleArn
       Source:
         Type: CODEPIPELINE
@@ -54,9 +60,9 @@ Resources:
         Image: aws/codebuild/standard:7.0
       Tags:
         - Key: Name
-          Value: CEP-CodeBuild-Test
+          Value: !Sub '${ProjectName}-CodeBuild-Test'
         - Key: Environment
-          Value: Course-End-Project
+          Value: !Ref Environment
 
 Outputs:
   CodeBuildProjectName:

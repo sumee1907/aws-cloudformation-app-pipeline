@@ -36,6 +36,44 @@ Parameters:
   ECSInfrastructureRoleArn:
     Type: String
 
+  FrontendDesiredCount:
+    Type: Number
+
+  BackendDesiredCount:
+    Type: Number
+
+  FrontendCpu:
+    Type: String
+
+  FrontendMemory:
+    Type: String
+
+  BackendCpu:
+    Type: String
+
+  BackendMemory:
+    Type: String
+
+  FrontendBakeTimeMinutes:
+    Type: Number
+
+  LogRetentionDays:
+    Type: Number
+
+  FrontendPort:
+    Type: Number
+
+  BackendPort:
+    Type: Number
+
+  ProjectName:
+    Type: String
+    Description: Project name used for ECS resource naming
+
+  Environment:
+    Type: String
+    Description: Environment name used for ECS resource naming
+
 Resources:
 
   # ---------------- ECS Cluster ----------------
@@ -43,37 +81,37 @@ Resources:
   ECSCluster:
     Type: AWS::ECS::Cluster
     Properties:
-      ClusterName: CEP-ECS-Cluster
+      ClusterName: !Sub '${ProjectName}-ECS-Cluster'
       ServiceConnectDefaults:
-        Namespace: cep.local
+        Namespace: !Sub '${ProjectName}.local'
       Tags:
         - Key: Name
-          Value: CEP-ECS-Cluster
+          Value: !Sub '${ProjectName}-ECS-Cluster'
         - Key: Environment
-          Value: Course-End-Project
+          Value: !Ref Environment
 
   # ---------------- CloudWatch Logs ----------------
 
   FrontendLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: /ecs/cep-frontend
-      RetentionInDays: 3
+      LogGroupName: !Sub '/ecs/${ProjectName}-frontend'
+      RetentionInDays: !Ref LogRetentionDays
 
   BackendLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: /ecs/cep-backend
-      RetentionInDays: 3
+      LogGroupName: !Sub '/ecs/${ProjectName}-backend'
+      RetentionInDays: !Ref LogRetentionDays
 
   # ---------------- Backend Task Definition ----------------
 
   BackendTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
-      Family: cep-backend
-      Cpu: '256'
-      Memory: '512'
+      Family: !Sub '${ProjectName}-backend'
+      Cpu: !Ref BackendCpu
+      Memory: !Ref BackendMemory
       NetworkMode: awsvpc
 
       RequiresCompatibilities:
@@ -88,7 +126,7 @@ Resources:
 
           PortMappings:
             - Name: backend
-              ContainerPort: 3000
+              ContainerPort: !Ref BackendPort
               Protocol: tcp
               AppProtocol: http
 
@@ -97,7 +135,7 @@ Resources:
               Value: production
 
             - Name: PORT
-              Value: '3000'
+              Value: !Sub '${BackendPort}'
 
           LogConfiguration:
             LogDriver: awslogs
@@ -111,11 +149,11 @@ Resources:
   BackendService:
     Type: AWS::ECS::Service
     Properties:
-      ServiceName: CEP-Backend-Service
+      ServiceName: !Sub '${ProjectName}-Backend-Service'
       Cluster: !Ref ECSCluster
       TaskDefinition: !Ref BackendTaskDefinition
 
-      DesiredCount: 2
+      DesiredCount: !Ref BackendDesiredCount
 
       LaunchType: FARGATE
       PlatformVersion: LATEST
@@ -131,22 +169,22 @@ Resources:
 
       ServiceConnectConfiguration:
         Enabled: true
-        Namespace: cep.local
+        Namespace: !Sub '${ProjectName}.local'
         Services:
           - PortName: backend
             DiscoveryName: backend
             ClientAliases:
               - DnsName: backend
-                Port: 3000
+                Port: !Ref BackendPort
 
   # ---------------- Frontend Task Definition ----------------
 
   FrontendTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
-      Family: cep-frontend
-      Cpu: '256'
-      Memory: '512'
+      Family: !Sub '${ProjectName}-frontend'
+      Cpu: !Ref FrontendCpu
+      Memory: !Ref FrontendMemory
       NetworkMode: awsvpc
 
       RequiresCompatibilities:
@@ -161,7 +199,7 @@ Resources:
 
           PortMappings:
             - Name: frontend
-              ContainerPort: 80
+              ContainerPort: !Ref FrontendPort
               Protocol: tcp
               AppProtocol: http
 
@@ -180,19 +218,21 @@ Resources:
       - BackendService
 
     Properties:
-      ServiceName: CEP-Frontend-Service
+      ServiceName: !Sub '${ProjectName}-Frontend-Service'
       Cluster: !Ref ECSCluster
       TaskDefinition: !Ref FrontendTaskDefinition
-      DesiredCount: 2
+
+      DesiredCount: !Ref FrontendDesiredCount
 
       LaunchType: FARGATE
       PlatformVersion: LATEST
 
       DeploymentController:
         Type: ECS
+
       DeploymentConfiguration:
         Strategy: BLUE_GREEN
-        BakeTimeInMinutes: 2
+        BakeTimeInMinutes: !Ref FrontendBakeTimeMinutes
 
       HealthCheckGracePeriodSeconds: 60
 
@@ -206,17 +246,18 @@ Resources:
             - !Ref FrontendSecurityGroupId
 
       LoadBalancers:
-      - ContainerName: frontend
-        ContainerPort: 80
-        TargetGroupArn: !Ref FrontendBlueTargetGroupArn
-        AdvancedConfiguration:
-          AlternateTargetGroupArn: !Ref FrontendGreenTargetGroupArn
-          ProductionListenerRule: !Ref FrontendListenerRuleArn
-          RoleArn: !Ref ECSInfrastructureRoleArn
+        - ContainerName: frontend
+          ContainerPort: !Ref FrontendPort
+          TargetGroupArn: !Ref FrontendBlueTargetGroupArn
+          AdvancedConfiguration:
+            AlternateTargetGroupArn: !Ref FrontendGreenTargetGroupArn
+            ProductionListenerRule: !Ref FrontendListenerRuleArn
+            RoleArn: !Ref ECSInfrastructureRoleArn
 
       ServiceConnectConfiguration:
         Enabled: true
-        Namespace: cep.local
+        Namespace: !Sub '${ProjectName}.local'
+
 
 Outputs:
 

@@ -1,29 +1,67 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: CloudFormation template to build course end project VPC
 
+Parameters:
+
+  VPCCidr:
+    Type: String
+    Description: VPC CIDR block
+
+  PublicSubnetACidr:
+    Type: String
+    Description: Public subnet A CIDR block
+
+  PublicSubnetBCidr:
+    Type: String
+    Description: Public subnet B CIDR block
+
+  PrivateSubnetACidr:
+    Type: String
+    Description: Private subnet A CIDR block
+
+  PrivateSubnetBCidr:
+    Type: String
+    Description: Private subnet B CIDR block
+
+  FrontendPort:
+    Type: Number
+    Description: Frontend application port
+
+  BackendPort:
+    Type: Number
+    Description: Backend application port
+
+  ProjectName:
+    Type: String
+    Description: Project name used for resource naming
+
+  Environment:
+    Type: String
+    Description: Environment name used for resource naming
+
 Resources:
 
   # ---------------- VPC ----------------
   VPC:
     Type: AWS::EC2::VPC
     Properties:
-      CidrBlock: 10.0.0.0/16
+      CidrBlock: !Ref VPCCidr
       EnableDnsSupport: true
       EnableDnsHostnames: true
       Tags:
         - Key: Name
-          Value: CEP-VPC
+          Value: !Sub '${ProjectName}-VPC'
         - Key: Environment
-          Value: Course-End-Project
+          Value: !Ref Environment
 
   IGW:
     Type: AWS::EC2::InternetGateway
     Properties:
       Tags:
         - Key: Name
-          Value: CEP-IGW
+          Value: !Sub '${ProjectName}-IGW'
         - Key: Environment
-          Value: Course-End-Project
+          Value: !Ref Environment
 
   AttachIGW:
     Type: AWS::EC2::VPCGatewayAttachment
@@ -37,9 +75,9 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: CEP-Public-RouteTablePublic
+          Value: !Sub '${ProjectName}-Public-RouteTablePublic'
         - Key: Environment
-          Value: Course-End-Project
+          Value: !Ref Environment
 
   RoutePublic:
     Type: AWS::EC2::Route
@@ -55,9 +93,9 @@ Resources:
       Domain: vpc
       Tags:
         - Key: Name
-          Value: CEP-NAT-EIP
+          Value: !Sub '${ProjectName}-NAT-EIP'
         - Key: Environment
-          Value: Course-End-Project
+          Value: !Ref Environment
 
   NatGateway:
     Type: AWS::EC2::NatGateway
@@ -69,19 +107,19 @@ Resources:
       SubnetId: !Ref PublicSubnetA
       Tags:
         - Key: Name
-          Value: CEP-NAT-Gateway
+          Value: !Sub '${ProjectName}-NAT-Gateway'
         - Key: Environment
-          Value: Course-End-Project
+          Value: !Ref Environment
 
   PrivateRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref VPC
-      Tags: 
+      Tags:
         - Key: Name
-          Value: CEP-Private-RouteTable
+          Value: !Sub '${ProjectName}-Private-RouteTable'
         - Key: Environment
-          Value: Course-End-Project
+          Value: !Ref Environment
 
   PrivateRoute:
     Type: AWS::EC2::Route
@@ -103,41 +141,38 @@ Resources:
       RouteTableId: !Ref PrivateRouteTable
 
   # ---------------- Subnets ----------------
-  # Public subnets
   PublicSubnetA:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
-      CidrBlock: 10.0.0.0/24
+      CidrBlock: !Ref PublicSubnetACidr
       AvailabilityZone: !Select [0, !GetAZs '']
       MapPublicIpOnLaunch: true
-  
+
   PublicSubnetB:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
-      CidrBlock: 10.0.1.0/24
+      CidrBlock: !Ref PublicSubnetBCidr
       AvailabilityZone: !Select [1, !GetAZs '']
       MapPublicIpOnLaunch: true
 
-  # Private subnets
   PrivateSubnetA:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
-      CidrBlock: 10.0.2.0/24
+      CidrBlock: !Ref PrivateSubnetACidr
       AvailabilityZone: !Select [0, !GetAZs '']
       MapPublicIpOnLaunch: false
-  
+
   PrivateSubnetB:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
-      CidrBlock: 10.0.3.0/24
+      CidrBlock: !Ref PrivateSubnetBCidr
       AvailabilityZone: !Select [1, !GetAZs '']
       MapPublicIpOnLaunch: false
 
-  # Subnet associations
   PublicSubnetARoute:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
@@ -158,15 +193,15 @@ Resources:
       GroupDescription: ALB Security Group
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
+          FromPort: !Ref FrontendPort
+          ToPort: !Ref FrontendPort
           CidrIp: 0.0.0.0/0
       Tags:
         - Key: Name
-          Value: CEP-ALB-SG
+          Value: !Sub '${ProjectName}-ALB-SG'
         - Key: Environment
-          Value: Course-End-Project
-  
+          Value: !Ref Environment
+
   FrontendSG:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -174,14 +209,14 @@ Resources:
       GroupDescription: Frontend SG
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
+          FromPort: !Ref FrontendPort
+          ToPort: !Ref FrontendPort
           SourceSecurityGroupId: !Ref ALBSG
       Tags:
         - Key: Name
-          Value: CEP-Frontend-SG
+          Value: !Sub '${ProjectName}-Frontend-SG'
         - Key: Environment
-          Value: Course-End-Project
+          Value: !Ref Environment
 
   BackendSG:
     Type: AWS::EC2::SecurityGroup
@@ -190,20 +225,20 @@ Resources:
       GroupDescription: Backend security group
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 3000
-          ToPort: 3000
+          FromPort: !Ref BackendPort
+          ToPort: !Ref BackendPort
           SourceSecurityGroupId: !Ref FrontendSG
       Tags:
         - Key: Name
-          Value: CEP-Backend-SG
+          Value: !Sub '${ProjectName}-Backend-SG'
         - Key: Environment
-          Value: Course-End-Project
+          Value: !Ref Environment
 
-  # ---------------- ALBs ----------------
+  # ---------------- ALB ----------------
   ALB:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
-      Name: ALB-CEP
+      Name: !Sub '${ProjectName}-ALB'
       Subnets:
         - !Ref PublicSubnetA
         - !Ref PublicSubnetB
@@ -213,17 +248,17 @@ Resources:
       Type: application
       Tags:
         - Key: Name
-          Value: CEP-ALB
+          Value: !Sub '${ProjectName}-ALB'
         - Key: Environment
-          Value: Course-End-Project
+          Value: !Ref Environment
 
   # ---------------- Frontend Target Groups ----------------
   FrontendBlueTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: CEP-Frontend-Blue-TG
+      Name: !Sub '${ProjectName}-Frontend-Blue-TG'
       VpcId: !Ref VPC
-      Port: 80
+      Port: !Ref FrontendPort
       Protocol: HTTP
       TargetType: ip
 
@@ -238,16 +273,16 @@ Resources:
 
       Tags:
         - Key: Name
-          Value: CEP-Frontend-Blue-TG
+          Value: !Sub '${ProjectName}-Frontend-Blue-TG'
         - Key: Environment
-          Value: Course-End-Project
+          Value: !Ref Environment
 
   FrontendGreenTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: CEP-Frontend-Green-TG
+      Name: !Sub '${ProjectName}-Frontend-Green-TG'
       VpcId: !Ref VPC
-      Port: 80
+      Port: !Ref FrontendPort
       Protocol: HTTP
       TargetType: ip
 
@@ -262,22 +297,22 @@ Resources:
 
       Tags:
         - Key: Name
-          Value: CEP-Frontend-Green-TG
+          Value: !Sub '${ProjectName}-Frontend-Green-TG'
         - Key: Environment
-          Value: Course-End-Project
+          Value: !Ref Environment
 
   HTTPListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       LoadBalancerArn: !Ref ALB
-      Port: 80
+      Port: !Ref FrontendPort
       Protocol: HTTP
       DefaultActions:
-      - Type: fixed-response
-        FixedResponseConfig:
-          StatusCode: '404'
-          ContentType: text/plain
-          MessageBody: Not Found
+        - Type: fixed-response
+          FixedResponseConfig:
+            StatusCode: '404'
+            ContentType: text/plain
+            MessageBody: Not Found
 
   FrontendListenerRule:
     Type: AWS::ElasticLoadBalancingV2::ListenerRule
@@ -298,6 +333,7 @@ Resources:
                 Weight: 0
 
 Outputs:
+
   VPCId:
     Description: VPC ID
     Value: !Ref VPC

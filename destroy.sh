@@ -2,9 +2,14 @@
 
 set -euo pipefail
 
-PROJECT_NAME="cep"
-STACK_NAME="CEP-Main"
-AWS_REGION="us-east-1"
+CONFIG_FILE="config.env"
+
+if [[ ! -f "${CONFIG_FILE}" ]]; then
+    echo "ERROR: ${CONFIG_FILE} not found."
+    exit 1
+fi
+
+source "${CONFIG_FILE}"
 
 AWS_ACCOUNT_ID="$(
     aws sts get-caller-identity \
@@ -13,6 +18,7 @@ AWS_ACCOUNT_ID="$(
 )"
 
 S3_BUCKET="${PROJECT_NAME}-${AWS_ACCOUNT_ID}-${AWS_REGION}"
+STACK_NAME="${PROJECT_NAME^^}-Main"
 
 echo
 echo "============================================================"

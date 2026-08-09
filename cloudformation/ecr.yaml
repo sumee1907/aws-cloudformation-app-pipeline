@@ -1,18 +1,32 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Amazon ECR repositories for the course end project
 
+Parameters:
+
+  ProjectName:
+    Type: String
+    Description: Project name used for ECR repository naming
+
+  Environment:
+    Type: String
+    Description: Environment name used for ECR repository naming
+
+  EmptyOnDelete:
+    Type: String
+    Description: If true, the ECR repositories will be emptied when the stack is deleted. If false, the stack deletion will fail if the repositories are not empty.
+
 Resources:
 
   FrontendRepository:
     Type: AWS::ECR::Repository
     Properties:
-      RepositoryName: cep-frontend
+      RepositoryName: !Sub "${ProjectName}-frontend"
       ImageTagMutability: MUTABLE
       ImageScanningConfiguration:
         ScanOnPush: true
       EncryptionConfiguration:
         EncryptionType: AES256
-      EmptyOnDelete: true        #Being this is a lab environment, we can safely delete the repository when the stack is deleted. In production, you would want to set this to false to avoid accidental deletion of your images.
+      EmptyOnDelete: !Ref EmptyOnDelete
       LifecyclePolicy:
         LifecyclePolicyText: |
           {
@@ -33,20 +47,20 @@ Resources:
           }
       Tags:
         - Key: Name
-          Value: CEP-Frontend-ECR
+          Value: !Sub "${ProjectName}-Frontend-ECR"
         - Key: Environment
-          Value: Course-End-Project
+          Value: !Ref Environment
 
   BackendRepository:
     Type: AWS::ECR::Repository
     Properties:
-      RepositoryName: cep-backend
+      RepositoryName: !Sub "${ProjectName}-backend"
       ImageTagMutability: MUTABLE
       ImageScanningConfiguration:
         ScanOnPush: true
       EncryptionConfiguration:
         EncryptionType: AES256
-      EmptyOnDelete: true   #Being this is a lab environment, we can safely delete the repository when the stack is deleted. In production, you would want to set this to false to avoid accidental deletion of your images.
+      EmptyOnDelete: !Ref EmptyOnDelete
       LifecyclePolicy:
         LifecyclePolicyText: |
           {
@@ -67,9 +81,9 @@ Resources:
           }
       Tags:
         - Key: Name
-          Value: CEP-Backend-ECR
+          Value: !Sub "${ProjectName}-Backend-ECR"
         - Key: Environment
-          Value: Course-End-Project
+          Value: !Ref Environment
 
 Outputs:
 
