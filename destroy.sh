@@ -30,6 +30,31 @@ echo "Stack Name : ${STACK_NAME}"
 echo "S3 Bucket  : ${S3_BUCKET}"
 echo
 
+echo "Scaling ECS services to zero..."
+
+aws ecs update-service \
+    --cluster "${PROJECT_NAME}-ECS-Cluster" \
+    --service "${PROJECT_NAME}-Backend-Service" \
+    --desired-count 0 \
+    --region "${AWS_REGION}" \
+    >/dev/null
+
+aws ecs update-service \
+    --cluster "${PROJECT_NAME}-ECS-Cluster" \
+    --service "${PROJECT_NAME}-Frontend-Service" \
+    --desired-count 0 \
+    --region "${AWS_REGION}" \
+    >/dev/null
+
+echo "Waiting for services to stop..."
+
+aws ecs wait services-stable \
+    --cluster "${PROJECT_NAME}-ECS-Cluster" \
+    --services \
+        "${PROJECT_NAME}-Backend-Service" \
+        "${PROJECT_NAME}-Frontend-Service" \
+    --region "${AWS_REGION}"
+
 if aws cloudformation describe-stacks \
     --stack-name "${STACK_NAME}" \
     --region "${AWS_REGION}" \

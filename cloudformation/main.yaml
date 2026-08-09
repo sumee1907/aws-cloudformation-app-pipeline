@@ -163,8 +163,6 @@ Resources:
         BackendRepositoryUri: !GetAtt ECRStack.Outputs.BackendRepositoryUri
         ECSTaskExecutionRoleArn: !GetAtt IAMStack.Outputs.ECSTaskExecutionRoleArn
         ECSInfrastructureRoleArn: !GetAtt IAMStack.Outputs.ECSInfrastructureRoleArn
-        FrontendDesiredCount: !Ref FrontendDesiredCount
-        BackendDesiredCount: !Ref BackendDesiredCount
         FrontendCpu: !Ref FrontendCpu
         FrontendMemory: !Ref FrontendMemory
         BackendCpu: !Ref BackendCpu

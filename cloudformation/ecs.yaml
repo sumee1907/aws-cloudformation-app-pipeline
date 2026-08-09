@@ -36,12 +36,6 @@ Parameters:
   ECSInfrastructureRoleArn:
     Type: String
 
-  FrontendDesiredCount:
-    Type: Number
-
-  BackendDesiredCount:
-    Type: Number
-
   FrontendCpu:
     Type: String
 
@@ -146,9 +140,7 @@ Resources:
       ServiceName: !Sub '${ProjectName}-Backend-Service'
       Cluster: !Ref ECSCluster
       TaskDefinition: !Ref BackendTaskDefinition
-
-      DesiredCount: !Ref BackendDesiredCount
-
+      DesiredCount: 0
       LaunchType: FARGATE
       PlatformVersion: LATEST
 
@@ -215,9 +207,7 @@ Resources:
       ServiceName: !Sub '${ProjectName}-Frontend-Service'
       Cluster: !Ref ECSCluster
       TaskDefinition: !Ref FrontendTaskDefinition
-
-      DesiredCount: !Ref FrontendDesiredCount
-
+      DesiredCount: 0
       LaunchType: FARGATE
       PlatformVersion: LATEST
 
