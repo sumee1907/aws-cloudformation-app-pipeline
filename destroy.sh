@@ -54,19 +54,25 @@ fi
 
 echo
 
-if aws s3api head-bucket \
-    --bucket "${S3_BUCKET}" \
-    2>/dev/null; then
+if [[ "${DELETE_S3_BUCKET}" == "true" ]]; then
 
-    echo "Deleting S3 bucket and all data inside..."
+    if aws s3api head-bucket \
+        --bucket "${S3_BUCKET}" \
+        2>/dev/null; then
 
-    aws s3 rb "s3://${S3_BUCKET}" \
-        --force \
-        --region "${AWS_REGION}"
+        echo "Deleting S3 bucket and all data inside..."
 
-    echo "S3 bucket deleted."
+        aws s3 rb "s3://${S3_BUCKET}" \
+            --force \
+            --region "${AWS_REGION}"
+
+        echo "S3 bucket deleted."
+    else
+        echo "S3 bucket does not exist."
+    fi
+
 else
-    echo "S3 bucket does not exist."
+    echo "S3 bucket retained because DELETE_S3_BUCKET=${DELETE_S3_BUCKET}"
 fi
 
 rm -f cloudformation/main-packaged.yaml

@@ -87,7 +87,7 @@ Parameters:
     Type: String
     Description: Project name used for resource naming
 
-  EmptyOnDelete:
+  ECREmptyOnDelete:
     Type: String
     Description: If true, the ECR repositories will be emptied when the stack is deleted. If false, the stack deletion will fail if the repositories are not empty.
 
@@ -126,7 +126,7 @@ Resources:
       Parameters:
         ProjectName: !Ref ProjectName
         Environment: !Ref Environment
-        EmptyOnDelete: !Ref EmptyOnDelete
+        ECREmptyOnDelete: !Ref ECREmptyOnDelete
       Tags:
         - Key: Name
           Value: !Sub '${ProjectName}-ECR-Nested-Stack'
@@ -146,6 +146,7 @@ Resources:
         BackendRepositoryArn: !GetAtt ECRStack.Outputs.BackendRepositoryArn
         ProjectName: !Ref ProjectName
         Environment: !Ref Environment
+        GitHubConnectionArn: !Ref GitHubConnectionArn
       Tags:
         - Key: Name
           Value: !Sub '${ProjectName}-IAM-Nested-Stack'

@@ -23,6 +23,10 @@ Parameters:
     Type: String
     Description: Environment name used for IAM resource naming
 
+  GitHubConnectionArn:
+    Type: String
+    Description: Existing AWS CodeConnections ARN for GitHub
+
 Resources:
 
   # ---------------- ECS Infrastructure Role ----------------
@@ -93,7 +97,7 @@ Resources:
               - sts:AssumeRole
 
       Policies:
-        - PolicyName: CEP-CodeBuild-Policy
+        - PolicyName: !Sub '${ProjectName}-CodeBuild-Policy'
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -160,7 +164,7 @@ Resources:
               - sts:AssumeRole
 
       Policies:
-        - PolicyName: CEP-CodePipeline-Policy
+        - PolicyName: !Sub '${ProjectName}-CodePipeline-Policy'
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -214,7 +218,7 @@ Resources:
                 Action:
                   - codeconnections:UseConnection
                 Resource:
-                  - arn:aws:codeconnections:us-east-1:387125168819:connection/7b6244c7-96bf-4dd1-8930-3082962ad32a
+                  - !Ref GitHubConnectionArn
 
       Tags:
         - Key: Name

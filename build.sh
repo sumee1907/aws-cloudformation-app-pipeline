@@ -25,10 +25,16 @@ echo
 if ! aws s3api head-bucket --bucket "${S3_BUCKET}" 2>/dev/null; then
     echo "Creating S3 bucket..."
 
-    aws s3api create-bucket \
-        --bucket "${S3_BUCKET}" \
-        --region "${AWS_REGION}" \
-        >/dev/null
+    if [[ "${AWS_REGION}" == "us-east-1" ]]; then
+        aws s3api create-bucket \
+            --bucket "${S3_BUCKET}" \
+            --region "${AWS_REGION}"
+    else
+        aws s3api create-bucket \
+            --bucket "${S3_BUCKET}" \
+            --region "${AWS_REGION}" \
+            --create-bucket-configuration LocationConstraint="${AWS_REGION}"
+    fi
 fi
 
 # Enable server-side encryption

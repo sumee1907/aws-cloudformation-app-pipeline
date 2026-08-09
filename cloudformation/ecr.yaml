@@ -11,9 +11,9 @@ Parameters:
     Type: String
     Description: Environment name used for ECR repository naming
 
-  EmptyOnDelete:
+  ECREmptyOnDelete:
     Type: String
-    Description: If true, the ECR repositories will be emptied when the stack is deleted. If false, the stack deletion will fail if the repositories are not empty.
+    Description: If true, the ECR repositories will be emptied when the stack is deleted
 
 Resources:
 
@@ -26,7 +26,7 @@ Resources:
         ScanOnPush: true
       EncryptionConfiguration:
         EncryptionType: AES256
-      EmptyOnDelete: !Ref EmptyOnDelete
+      EmptyOnDelete: !Ref ECREmptyOnDelete
       LifecyclePolicy:
         LifecyclePolicyText: |
           {
@@ -60,7 +60,7 @@ Resources:
         ScanOnPush: true
       EncryptionConfiguration:
         EncryptionType: AES256
-      EmptyOnDelete: !Ref EmptyOnDelete
+      EmptyOnDelete: !Ref ECREmptyOnDelete
       LifecyclePolicy:
         LifecyclePolicyText: |
           {
